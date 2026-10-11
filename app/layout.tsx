@@ -4,7 +4,7 @@ import "./globals.css";
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
