@@ -26,3 +26,13 @@ export type Aviso = {
   texto: string;
   createdAt: Date;
 };
+
+export type Morador = {
+  id: number;
+  nome: string;
+  email: string;
+  casaId: number;
+  ativo: boolean;
+  dataEntrada: Date;
+  dataSaida: Date | null;
+};
