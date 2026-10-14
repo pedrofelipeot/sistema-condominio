@@ -6,7 +6,7 @@ export default function MoradorLayout({ children }: { children: React.ReactNode 
       <nav className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-8 gap-y-3 px-5 py-4 sm:px-8">
           <Link
-            href="/morador/avisos"
+            href="/morador"
             className="text-sm font-semibold tracking-tight text-slate-900"
           >
             Área do morador
