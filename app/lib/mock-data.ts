@@ -84,3 +84,7 @@ export async function buscarAviso(id: number): Promise<Aviso | undefined> {
 export async function listarTodasCobrancas(): Promise<Cobranca[]> {
   return cobrancas;
 }
+
+export async function buscarMorador(id: number): Promise<Morador | undefined>{
+    return moradores.find((m)=>m.id===id)
+}
