@@ -1,59 +1,129 @@
-import { formatarData } from "../lib/format";
-import { listarCasas, listarCobrancasDoMes } from "../lib/mock-data";
-import { statusDaCobranca } from "../lib/status";
 
-export default async function adminPage() {
+"use client";
 
-  const casas = await listarCasas();
-  const cobrancas = await listarCobrancasDoMes("2026-10");
+import { useState } from "react";
+import PainelMensal from "../components/PainelMensal";
+import { listarCasas, listarTodasCobrancas } from "../lib/mock-data";
+import { useEffect } from "react";
+import type { Casa, Cobranca } from "../lib/types";
 
- const linhas = casas.map((casa) => {
-  const cobranca = cobrancas.find((c) => c.casaId === casa.id);
-  return { casa, cobranca, status: statusDaCobranca(cobranca) };
-});
-const pagas = linhas.filter((l) => l.status === "Paga").length;
-const emAtraso = linhas.filter((l) => l.status === "Em atraso").length;
-const pendentes = linhas.filter((l) => l.status === "Pendente").length;
-const semCobranca = linhas.filter((l) => l.status === "Sem cobrança").length;
+export default function AdminPage() {
+  const [casas, setCasas] = useState<Casa[]>([]);
+  const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [mes, setMes] = useState("");
+  const [carregando, setCarregando] = useState(true);
 
+  useEffect(() => {
+    async function carregarDados() {
+      const casasCarregadas = await listarCasas();
+      const cobrancasCarregadas = await listarTodasCobrancas();
 
+      setCasas(casasCarregadas);
+      setCobrancas(cobrancasCarregadas);
 
-  
+      const mesesDisponiveis = [
+        ...new Set(
+          cobrancasCarregadas.map((c) => c.competencia)
+        ),
+      ].sort().reverse();
+
+      setMes(mesesDisponiveis[0] ?? "");
+      setCarregando(false);
+    }
+
+    carregarDados();
+  }, []);
+
+  const meses = [
+    ...new Set(cobrancas.map((c) => c.competencia)),
+  ].sort().reverse();
+
+  const cobrancasDoMes = cobrancas.filter(
+    (c) => c.competencia === mes
+  );
+
   return (
-    <div>
-      <h1>Painel Administrativo</h1>
+    <div className="space-y-8">
+      <header className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-9 text-white shadow-xl shadow-slate-900/10 sm:px-10 sm:py-11">
+        <div
+          aria-hidden="true"
+          className="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.04]"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute -bottom-28 right-28 h-56 w-56 rounded-full bg-blue-500/10 blur-2xl"
+        />
+        <div className="relative max-w-2xl">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-blue-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+            Visão geral
+          </span>
+          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+            Painel administrativo
+          </h1>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
+            Acompanhe a situação das cobranças e consulte o resumo mensal das
+            unidades do condomínio.
+          </p>
+        </div>
+      </header>
 
-<section>
-  <p>Pagas: {pagas}</p>
-  <p>Em atraso: {emAtraso}</p>
-  <p>Pendentes no prazo: {pendentes}</p>
-  <p>Sem cobrança: {semCobranca}</p>
-</section>
-      <table>
-  <thead>
-    <tr>
-      <th>Número da Casa</th>
-      <th>Quartos</th>
-      <th>Valor do Aluguel</th>
-      <th>Vencimento</th>
-      <th>Data de pagamento</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-  <tbody>
-    {linhas.map((linha) => (
-      <tr key={linha.casa.id}>
-        <td>{linha.casa.numero}</td>
-        <td>{linha.casa.quartos}</td>
-        <td>{linha.casa.valorAluguel}</td>
-        <td>{linha.cobranca ? formatarData(linha.cobranca.vencimento) : "-"}</td>
-        <td>{linha.cobranca ? formatarData(linha.cobranca.pagoEm) : "-"}</td>
-        <td>{linha.status}</td>
-      </tr>
-    ))}
-  </tbody>
-</table>
-    
+      <section
+        aria-labelledby="resumo-mensal-titulo"
+        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex sm:items-end sm:justify-between sm:gap-6 sm:p-6"
+      >
+        <div>
+          <h2
+            id="resumo-mensal-titulo"
+            className="text-lg font-semibold tracking-tight text-slate-900"
+          >
+            Resumo mensal
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Escolha uma competência para consultar as cobranças.
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 sm:w-64">
+          <label
+            htmlFor="mes"
+            className="mb-2 block text-sm font-medium text-slate-700"
+          >
+            Competência
+          </label>
+          <select
+            id="mes"
+            value={mes}
+            onChange={(e) => setMes(e.target.value)}
+            disabled={carregando || meses.length === 0}
+            className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+          >
+            {meses.length === 0 && (
+              <option value="">
+                {carregando ? "Carregando competências..." : "Sem competências"}
+              </option>
+            )}
+            {meses.map((competencia) => (
+              <option key={competencia} value={competencia}>
+                {new Date(`${competencia}-01T00:00:00.000Z`).toLocaleDateString(
+                  "pt-BR",
+                  { month: "long", year: "numeric", timeZone: "UTC" },
+                )}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      {carregando ? (
+        <div
+          role="status"
+          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        >
+          Carregando o resumo das cobranças...
+        </div>
+      ) : (
+        <PainelMensal casas={casas} cobrancas={cobrancasDoMes} />
+      )}
     </div>
   );
 }

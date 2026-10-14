@@ -80,3 +80,7 @@ export async function listarAvisos(): Promise<Aviso[]> {
 export async function buscarAviso(id: number): Promise<Aviso | undefined> {
   return avisos.find((a) => a.id === id);
 }
+
+export async function listarTodasCobrancas(): Promise<Cobranca[]> {
+  return cobrancas;
+}
