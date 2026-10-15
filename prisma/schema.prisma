@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// A URL do banco NÃO fica aqui: ela é configurada no prisma.config.ts
+datasource db {
+  provider = "postgresql"
+}
+
+enum Perfil {
+  ADMIN
+  MORADOR
+}
+
+enum StatusCobranca {
+  PENDENTE
+  PAGA
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+}
+
+// As 20 casas são criadas uma vez via seed.
+// "Ocupada" NÃO é guardado: é calculado (existe algum morador ativo na casa?)
+model Casa {
+  id            Int        @id @default(autoincrement())
+  numero        Int        @unique
+  quartos       Int
+  valorAluguel  Decimal    @db.Decimal(10, 2)
+  diaVencimento Int
+
+  moradores     Usuario[]
+  cobrancas     Cobranca[]
+}
+
+// Admin e moradores na mesma tabela, separados por "perfil"
+model Usuario {
+  id                 Int       @id @default(autoincrement())
+  nome               String
+  email              String    @unique
+  senhaHash          String
+  perfil             Perfil    @default(MORADOR)
+  ativo              Boolean   @default(true)
+  precisaTrocarSenha Boolean   @default(false)
+
+  // Só para moradores
+  casaId             Int?
+  casa               Casa?     @relation(fields: [casaId], references: [id])
+  dataEntrada        DateTime?
+  dataSaida          DateTime?
+
+  avisos             Aviso[]
+  createdAt          DateTime  @default(now())
+}
+
+model Cobranca {
+  id             Int             @id @default(autoincrement())
+  casaId         Int
+  casa           Casa            @relation(fields: [casaId], references: [id])
+
+  competencia    String          // formato "2026-10"
+  valor          Decimal         @db.Decimal(10, 2) // cópia do valor da casa no momento da geração
+  vencimento     DateTime
+  status         StatusCobranca  @default(PENDENTE)
+
+  // Preenchidos ao registrar o pagamento
+  pagoEm         DateTime?
+  formaPagamento FormaPagamento?
+
+  createdAt      DateTime        @default(now())
+
+  // Uma cobrança por casa por mês
+  @@unique([casaId, competencia])
+}
+
+model Aviso {
+  id        Int      @id @default(autoincrement())
+  titulo    String
+  texto     String
+  autorId   Int
+  autor     Usuario  @relation(fields: [autorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
