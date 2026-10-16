@@ -1,5 +1,5 @@
-import { formatarData } from "@/app/lib/format";
-import { listarAvisos } from "@/app/lib/mock-data";
+import { formatarData } from "@/lib/format";
+import { listarAvisos } from "@/lib/mock-data";
 
 export default async function AvisosPage() {
   const avisos = await listarAvisos();

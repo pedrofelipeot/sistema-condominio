@@ -1,5 +1,5 @@
-import { formatarMoeda } from "@/app/lib/format";
-import { listarCasas } from "@/app/lib/mock-data";
+import { formatarMoeda } from "@/lib/format";
+import { listarCasas } from "@/lib/mock-data";
 import Link from "next/link";
 
 export default async function CasasPage() {

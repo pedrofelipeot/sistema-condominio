@@ -3,7 +3,7 @@ import {
   buscarCasa,
   buscarMorador,
   listarCobrancasDaCasa,
-} from "@/app/lib/mock-data";
+} from "@/lib/mock-data";
 import { notFound } from "next/navigation";
 
 export default async function PagamentosPage() {

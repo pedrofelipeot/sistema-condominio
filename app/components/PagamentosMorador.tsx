@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { formatarData, formatarMoeda } from "@/app/lib/format";
-import { statusDaCobranca } from "@/app/lib/status";
-import type { Casa, Cobranca, Morador } from "@/app/lib/types";
+import { formatarData, formatarMoeda } from "@/lib/format";
+import { statusDaCobranca } from "@/lib/status";
+import type { Casa, Cobranca, Morador } from "@/lib/types";
 
 type Props = {
   morador: Morador;

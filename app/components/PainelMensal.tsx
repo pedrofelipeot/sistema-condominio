@@ -1,8 +1,8 @@
 "use client"
 
-import { formatarData, formatarMoeda } from "../lib/format";
-import { statusDaCobranca } from "../lib/status";
-import type { Casa, Cobranca } from "../lib/types";
+import { formatarData, formatarMoeda } from "@/lib/format";
+import { statusDaCobranca } from "@/lib/status";
+import type { Casa, Cobranca } from "@/lib/types";
 
 type Props = { casas: Casa[]; cobrancas: Cobranca[] };
 

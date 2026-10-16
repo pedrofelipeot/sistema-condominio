@@ -3,9 +3,9 @@
 
 import { useState } from "react";
 import PainelMensal from "../components/PainelMensal";
-import { listarCasas, listarTodasCobrancas } from "../lib/mock-data";
+import { listarCasas, listarTodasCobrancas } from "@/lib/mock-data";
 import { useEffect } from "react";
-import type { Casa, Cobranca } from "../lib/types";
+import type { Casa, Cobranca } from "@/lib/types";
 
 export default function AdminPage() {
   const [casas, setCasas] = useState<Casa[]>([]);

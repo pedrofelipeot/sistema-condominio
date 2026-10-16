@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { formatarData, formatarMoeda } from "@/app/lib/format";
+import { formatarData, formatarMoeda } from "@/lib/format";
 import {
   buscarCasa,
   buscarMorador,
   listarAvisos,
   listarCobrancasDaCasa,
-} from "@/app/lib/mock-data";
-import { statusDaCobranca } from "@/app/lib/status";
+} from "@/lib/mock-data";
+import { statusDaCobranca } from "@/lib/status";
 import { notFound } from "next/navigation";
 
 export default async function MoradorPage() {

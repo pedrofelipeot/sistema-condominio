@@ -1,7 +1,7 @@
-import { buscarCasa, listarCobrancasDaCasa, listarMoradoresDaCasa } from "@/app/lib/mock-data";
+import { buscarCasa, listarCobrancasDaCasa, listarMoradoresDaCasa } from "@/lib/mock-data";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { formatarData, formatarMoeda } from "@/app/lib/format";
+import { formatarData, formatarMoeda } from "@/lib/format";
 export default async function casaIdPage({
   params,
 }: {  
