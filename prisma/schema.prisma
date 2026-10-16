@@ -26,51 +26,62 @@ enum FormaPagamento {
 // As 20 casas são criadas uma vez via seed.
 // "Ocupada" NÃO é guardado: é calculado (existe algum morador ativo na casa?)
 model Casa {
-  id            Int        @id @default(autoincrement())
-  numero        Int        @unique
+  id            Int     @id @default(autoincrement())
+  numero        Int     @unique
   quartos       Int
-  valorAluguel  Decimal    @db.Decimal(10, 2)
+  valorAluguel  Decimal @db.Decimal(10, 2)
   diaVencimento Int
 
-  moradores     Usuario[]
-  cobrancas     Cobranca[]
+  ocupacoes Ocupacao[]
+  cobrancas Cobranca[]
 }
 
 // Admin e moradores na mesma tabela, separados por "perfil"
 model Usuario {
-  id                 Int       @id @default(autoincrement())
+  id                 Int     @id @default(autoincrement())
   nome               String
-  email              String    @unique
+  email              String  @unique
   senhaHash          String
-  perfil             Perfil    @default(MORADOR)
-  ativo              Boolean   @default(true)
-  precisaTrocarSenha Boolean   @default(false)
+  perfil             Perfil  @default(MORADOR)
+  ativo              Boolean @default(true)
+  precisaTrocarSenha Boolean @default(false)
 
-  // Só para moradores
-  casaId             Int?
-  casa               Casa?     @relation(fields: [casaId], references: [id])
-  dataEntrada        DateTime?
-  dataSaida          DateTime?
+  ocupacoes Ocupacao[]
+  avisos    Aviso[]
+  createdAt DateTime   @default(now())
+}
 
-  avisos             Aviso[]
-  createdAt          DateTime  @default(now())
+// Preserva cada período de residência para filtrar cobranças pelo vencimento.
+model Ocupacao {
+  id          Int       @id @default(autoincrement())
+  usuarioId   Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+  casaId      Int
+  casa        Casa      @relation(fields: [casaId], references: [id], onDelete: Restrict)
+  dataEntrada DateTime
+  dataSaida   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([usuarioId, casaId, dataEntrada])
+  @@index([usuarioId, dataEntrada, dataSaida])
+  @@index([casaId, dataEntrada, dataSaida])
 }
 
 model Cobranca {
-  id             Int             @id @default(autoincrement())
-  casaId         Int
-  casa           Casa            @relation(fields: [casaId], references: [id])
+  id     Int  @id @default(autoincrement())
+  casaId Int
+  casa   Casa @relation(fields: [casaId], references: [id])
 
-  competencia    String          // formato "2026-10"
-  valor          Decimal         @db.Decimal(10, 2) // cópia do valor da casa no momento da geração
-  vencimento     DateTime
-  status         StatusCobranca  @default(PENDENTE)
+  competencia String // formato "2026-10"
+  valor       Decimal        @db.Decimal(10, 2) // cópia do valor da casa no momento da geração
+  vencimento  DateTime
+  status      StatusCobranca @default(PENDENTE)
 
   // Preenchidos ao registrar o pagamento
   pagoEm         DateTime?
   formaPagamento FormaPagamento?
 
-  createdAt      DateTime        @default(now())
+  createdAt DateTime @default(now())
 
   // Uma cobrança por casa por mês
   @@unique([casaId, competencia])

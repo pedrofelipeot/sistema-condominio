@@ -2,6 +2,7 @@ import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
+import { fimDoDiaUTC } from "../lib/date";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("Defina DATABASE_URL no arquivo .env");
@@ -79,7 +80,7 @@ async function main() {
   // 3. Moradores de teste
   const senhaHashMoradores = await bcrypt.hash(moradorPassword, 10);
   for (const [nome, email, numeroCasa, ativo, entrada, saida] of MORADORES_TESTE) {
-    await prisma.usuario.upsert({
+    const usuario = await prisma.usuario.upsert({
       where: { email },
       update: {},
       create: {
@@ -89,9 +90,25 @@ async function main() {
         perfil: "MORADOR",
         ativo,
         precisaTrocarSenha: true,
-        casaId: casaIdPorNumero.get(numeroCasa)!,
-        dataEntrada: new Date(entrada),
-        dataSaida: saida ? new Date(saida) : null,
+      },
+    });
+
+    const casaId = casaIdPorNumero.get(numeroCasa)!;
+    const dataEntrada = new Date(entrada);
+    await prisma.ocupacao.upsert({
+      where: {
+        usuarioId_casaId_dataEntrada: {
+          usuarioId: usuario.id,
+          casaId,
+          dataEntrada,
+        },
+      },
+      update: { dataSaida: saida ? fimDoDiaUTC(new Date(saida)) : null },
+      create: {
+        usuarioId: usuario.id,
+        casaId,
+        dataEntrada,
+        dataSaida: saida ? fimDoDiaUTC(new Date(saida)) : null,
       },
     });
   }
