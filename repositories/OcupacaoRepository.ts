@@ -1,34 +1,57 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, type Db } from "@/lib/prisma";
 
-type NovaOcupacao = {
-  usuarioId: number;
-  casaId: number;
-  dataEntrada: Date;
-};
+type DadosNovaOcupacao = Pick<
+  Prisma.OcupacaoUncheckedCreateInput,
+  "usuarioId" | "casaId" | "dataEntrada"
+>;
 
 export class OcupacaoRepository {
-  static listarPorCasa(casaId: number) {
-    return prisma.ocupacao.findMany({
+  static listarPorCasa(casaId: number, db: Db = prisma) {
+    return db.ocupacao.findMany({
       where: { casaId },
       include: {
-        usuario: {
-          omit: { senhaHash: true },
-        },
+        usuario: { omit: { senhaHash: true } },
       },
       orderBy: { dataEntrada: "desc" },
     });
   }
 
-  static listarPorMorador(usuarioId: number) {
-    return prisma.ocupacao.findMany({
+  static listarPorMorador(usuarioId: number, db: Db = prisma) {
+    return db.ocupacao.findMany({
       where: { usuarioId },
       orderBy: { dataEntrada: "desc" },
     });
   }
 
-  static buscarOcupacaoAtiva(usuarioId: number, tx: Prisma.TransactionClient) {
-    return tx.ocupacao.findFirst({
+  static buscarAtualDaCasa(casaId: number, db: Db = prisma) {
+    return db.ocupacao.findFirst({
+      where: { casaId, dataSaida: null },
+      include: {
+        usuario: { omit: { senhaHash: true } },
+      },
+    });
+  }
+
+  static buscarOcupanteNaData(
+    casaId: number,
+    data: Date,
+    db: Db = prisma,
+  ) {
+    return db.ocupacao.findFirst({
+      where: {
+        casaId,
+        dataEntrada: { lte: data },
+        OR: [{ dataSaida: null }, { dataSaida: { gte: data } }],
+      },
+      include: {
+        usuario: { omit: { senhaHash: true } },
+      },
+    });
+  }
+
+  static buscarOcupacaoAtiva(usuarioId: number, db: Db = prisma) {
+    return db.ocupacao.findFirst({
       where: { usuarioId, dataSaida: null },
       orderBy: { dataEntrada: "desc" },
     });
@@ -37,9 +60,9 @@ export class OcupacaoRepository {
   static buscarPeriodoSobreposto(
     usuarioId: number,
     dataEntrada: Date,
-    tx: Prisma.TransactionClient,
+    db: Db = prisma,
   ) {
-    return tx.ocupacao.findFirst({
+    return db.ocupacao.findFirst({
       where: {
         usuarioId,
         OR: [{ dataSaida: null }, { dataSaida: { gte: dataEntrada } }],
@@ -47,21 +70,25 @@ export class OcupacaoRepository {
     });
   }
 
-  static criar(
-    dados: NovaOcupacao,
-    tx: Prisma.TransactionClient,
+  static buscarPeriodoSobrepostoNaCasa(
+    casaId: number,
+    dataEntrada: Date,
+    db: Db = prisma,
   ) {
-    const dadosPrisma = {
-      dataEntrada: dados.dataEntrada,
-      usuario: { connect: { id: dados.usuarioId } },
-      casa: { connect: { id: dados.casaId } },
-    } satisfies Prisma.OcupacaoCreateInput;
-
-    return tx.ocupacao.create({ data: dadosPrisma });
+    return db.ocupacao.findFirst({
+      where: {
+        casaId,
+        OR: [{ dataSaida: null }, { dataSaida: { gte: dataEntrada } }],
+      },
+    });
   }
 
-  static encerrar(id: number, dataSaida: Date, tx: Prisma.TransactionClient) {
-    return tx.ocupacao.update({
+  static criar(dados: DadosNovaOcupacao, db: Db = prisma) {
+    return db.ocupacao.create({ data: dados });
+  }
+
+  static encerrar(id: number, dataSaida: Date, db: Db = prisma) {
+    return db.ocupacao.update({
       where: { id },
       data: { dataSaida },
     });

@@ -1,63 +1,48 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, type Db } from "@/lib/prisma";
 
-type NovaCasa = Pick<
-  Prisma.CasaCreateInput,
+type DadosNovaCasa = Pick<
+  Prisma.CasaUncheckedCreateInput,
   "numero" | "quartos" | "valorAluguel" | "diaVencimento"
 >;
 
-type AtualizacaoCasa = Partial<NovaCasa>;
+type DadosAtualizacaoCasa = Pick<
+  Prisma.CasaUncheckedUpdateInput,
+  "numero" | "quartos" | "valorAluguel" | "diaVencimento"
+>;
 
 export class CasaRepository {
-  static listar() {
-    return prisma.casa.findMany({
+  static listar(db: Db = prisma) {
+    return db.casa.findMany({
       orderBy: { numero: "asc" },
     });
   }
 
-  static buscarPorId(id: number) {
-    return prisma.casa.findUnique({
+  static buscarPorId(id: number, db: Db = prisma) {
+    return db.casa.findUnique({
       where: { id },
     });
   }
 
-  static buscarPorNumero(numero: number) {
-    return prisma.casa.findUnique({
+  static buscarPorNumero(numero: number, db: Db = prisma) {
+    return db.casa.findUnique({
       where: { numero },
     });
   }
 
-  static criar(casa: NovaCasa) {
-    const dados = {
-      numero: casa.numero,
-      quartos: casa.quartos,
-      valorAluguel: casa.valorAluguel,
-      diaVencimento: casa.diaVencimento,
-    } satisfies Prisma.CasaCreateInput;
-
-    return prisma.casa.create({ data: dados });
+  static criar(casa: DadosNovaCasa, db: Db = prisma) {
+    return db.casa.create({ data: casa });
   }
 
-  static atualizar(id: number, casa: AtualizacaoCasa) {
-    const dados = {
-      ...(casa.numero !== undefined && { numero: casa.numero }),
-      ...(casa.quartos !== undefined && { quartos: casa.quartos }),
-      ...(casa.valorAluguel !== undefined && {
-        valorAluguel: casa.valorAluguel,
-      }),
-      ...(casa.diaVencimento !== undefined && {
-        diaVencimento: casa.diaVencimento,
-      }),
-    } satisfies Prisma.CasaUpdateInput;
-
-    return prisma.casa.update({
+  static atualizar(id: number, casa: DadosAtualizacaoCasa, db: Db = prisma) {
+    return db.casa.update({
       where: { id },
-      data: dados,
+      data: casa,
     });
   }
 
-  static excluir(id: number) {
-    return prisma.casa.delete({
+  static excluir(id: number, db: Db = prisma) {
+    return db.casa.delete({
       where: { id },
     });
   }

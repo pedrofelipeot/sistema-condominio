@@ -1,63 +1,58 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { fimDoDiaUTC } from "@/lib/date";
-import { prisma } from "@/lib/prisma";
+import { prisma, type Db } from "@/lib/prisma";
 
 type DadosNovaCobranca = Pick<
-  Prisma.CobrancaCreateInput,
+  Prisma.CobrancaUncheckedCreateInput,
+  | "casaId"
   | "competencia"
   | "valor"
   | "vencimento"
   | "status"
   | "pagoEm"
   | "formaPagamento"
-> & { casaId: number };
+>;
+
 type DadosAtualizacaoPagamento = Pick<
-  Prisma.CobrancaUpdateInput,
+  Prisma.CobrancaUncheckedUpdateInput,
   "status" | "pagoEm" | "formaPagamento"
 >;
 
 export class CobrancaRepository {
-  static listarTodas() {
-    return prisma.cobranca.findMany({
+  static listarTodas(db: Db = prisma) {
+    return db.cobranca.findMany({
       include: { casa: true },
       orderBy: [{ vencimento: "desc" }, { casaId: "asc" }],
     });
   }
 
-  static listarPorCasa(casaId: number) {
-    return prisma.cobranca.findMany({
+  static listarPorCasa(casaId: number, db: Db = prisma) {
+    return db.cobranca.findMany({
       where: { casaId },
       orderBy: { vencimento: "desc" },
     });
   }
 
-  static buscarPorId(id: number) {
-    return prisma.cobranca.findUnique({
+  static buscarPorId(id: number, db: Db = prisma) {
+    return db.cobranca.findUnique({
       where: { id },
       include: { casa: true },
     });
   }
 
-  static async listarVisiveisParaMorador(usuarioId: number) {
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      select: { perfil: true, ativo: true },
-    });
-
-    if (!usuario || usuario.perfil !== "MORADOR" || !usuario.ativo) {
-      return [];
+  static listarPorPeriodos(
+    periodos: {
+      casaId: number;
+      dataEntrada: Date;
+      dataSaida: Date | null;
+    }[],
+    db: Db = prisma,
+  ) {
+    if (periodos.length === 0) {
+      return Promise.resolve([]);
     }
 
-    const ocupacoes = await prisma.ocupacao.findMany({
-      where: { usuarioId },
-      select: { casaId: true, dataEntrada: true, dataSaida: true },
-    });
-
-    if (ocupacoes.length === 0) {
-      return [];
-    }
-
-    const periodosVisiveis: Prisma.CobrancaWhereInput[] = ocupacoes.map(
+    const filtros: Prisma.CobrancaWhereInput[] = periodos.map(
       ({ casaId, dataEntrada, dataSaida }) => ({
         casaId,
         vencimento: {
@@ -67,38 +62,32 @@ export class CobrancaRepository {
       }),
     );
 
-    return prisma.cobranca.findMany({
-      where: { OR: periodosVisiveis },
+    return db.cobranca.findMany({
+      where: { OR: filtros },
       orderBy: { vencimento: "desc" },
     });
   }
 
-  static criar(dados: DadosNovaCobranca) {
-    const { casaId, ...campos } = dados;
-    const dadosPrisma = {
-      ...campos,
-      casa: { connect: { id: casaId } },
-    } satisfies Prisma.CobrancaCreateInput;
-
-    return prisma.cobranca.create({ data: dadosPrisma });
+  static criar(dados: DadosNovaCobranca, db: Db = prisma) {
+    return db.cobranca.create({ data: dados });
   }
 
-  static criarSeNaoExistir(dados: DadosNovaCobranca) {
-    const { casaId, competencia, ...campos } = dados;
+  static criarSeNaoExistir(dados: DadosNovaCobranca, db: Db = prisma) {
+    const { casaId, competencia } = dados;
 
-    return prisma.cobranca.upsert({
+    return db.cobranca.upsert({
       where: { casaId_competencia: { casaId, competencia } },
       update: {},
-      create: {
-        ...campos,
-        competencia,
-        casa: { connect: { id: casaId } },
-      } satisfies Prisma.CobrancaCreateInput,
+      create: dados,
     });
   }
 
-  static atualizar(id: number, dados: DadosAtualizacaoPagamento) {
-    return prisma.cobranca.update({
+  static atualizar(
+    id: number,
+    dados: DadosAtualizacaoPagamento,
+    db: Db = prisma,
+  ) {
+    return db.cobranca.update({
       where: { id },
       data: dados,
     });

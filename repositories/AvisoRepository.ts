@@ -1,52 +1,50 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { prisma, type Db } from "@/lib/prisma";
 
 type DadosNovoAviso = Pick<
-  Prisma.AvisoCreateInput,
-  "titulo" | "texto"
-> & { autorId: number };
+  Prisma.AvisoUncheckedCreateInput,
+  "titulo" | "texto" | "autorId"
+>;
 
 type DadosAtualizacaoAviso = Pick<
-  Prisma.AvisoUpdateInput,
+  Prisma.AvisoUncheckedUpdateInput,
   "titulo" | "texto"
 >;
 
 export class AvisoRepository {
-  static listar() {
-    return prisma.aviso.findMany({
+  static listar(db: Db = prisma) {
+    return db.aviso.findMany({
       orderBy: { createdAt: "desc" },
     });
   }
 
-  static buscarPorId(id: number) {
-    return prisma.aviso.findUnique({ where: { id } });
+  static buscarPorId(id: number, db: Db = prisma) {
+    return db.aviso.findUnique({ where: { id } });
   }
 
-  static buscarPorTitulo(titulo: string) {
-    return prisma.aviso.findMany({
+  static buscarPorTitulo(titulo: string, db: Db = prisma) {
+    return db.aviso.findMany({
       where: { titulo },
       orderBy: { createdAt: "desc" },
     });
   }
 
-  static criar(aviso: DadosNovoAviso) {
-    const dados = {
-      titulo: aviso.titulo,
-      texto: aviso.texto,
-      autor: { connect: { id: aviso.autorId } },
-    } satisfies Prisma.AvisoCreateInput;
-
-    return prisma.aviso.create({ data: dados });
+  static criar(aviso: DadosNovoAviso, db: Db = prisma) {
+    return db.aviso.create({ data: aviso });
   }
 
-  static atualizar(id: number, aviso: DadosAtualizacaoAviso) {
-    return prisma.aviso.update({
+  static atualizar(
+    id: number,
+    aviso: DadosAtualizacaoAviso,
+    db: Db = prisma,
+  ) {
+    return db.aviso.update({
       where: { id },
       data: aviso,
     });
   }
 
-  static excluir(id: number) {
-    return prisma.aviso.delete({ where: { id } });
+  static excluir(id: number, db: Db = prisma) {
+    return db.aviso.delete({ where: { id } });
   }
 }

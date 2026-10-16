@@ -1,69 +1,52 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, type Db } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
 
-type NovoUsuario = Pick<
-  Prisma.UsuarioCreateInput,
-  | "nome"
-  | "email"
-  | "senhaHash"
-  | "perfil"
-  | "ativo"
-  | "precisaTrocarSenha"
+type DadosNovoUsuario = Pick<
+  Prisma.UsuarioUncheckedCreateInput,
+  "nome" | "email" | "senhaHash" | "perfil" | "ativo" | "precisaTrocarSenha"
 >;
 
 type DadosAtualizacaoUsuario = Pick<
-  Prisma.UsuarioUpdateInput,
-  | "nome"
-  | "email"
-  | "senhaHash"
-  | "precisaTrocarSenha"
+  Prisma.UsuarioUncheckedUpdateInput,
+  "nome" | "email" | "senhaHash" | "precisaTrocarSenha" | "ativo"
 >;
 
 const semSenha = { senhaHash: true } as const;
 
 export class UsuarioRepository {
-  static listar() {
-    return prisma.usuario.findMany({ omit: semSenha });
+  static listar(db: Db = prisma) {
+    return db.usuario.findMany({ omit: semSenha });
   }
 
-  static buscarPorId(id: number) {
-    return prisma.usuario.findUnique({ where: { id }, omit: semSenha });
+  static buscarPorId(id: number, db: Db = prisma) {
+    return db.usuario.findUnique({ where: { id }, omit: semSenha });
   }
 
-  static buscarPorEmail(email: string) {
-    return prisma.usuario.findUnique({ where: { email }, omit: semSenha });
+  static buscarPorEmail(email: string, db: Db = prisma) {
+    return db.usuario.findUnique({ where: { email }, omit: semSenha });
   }
 
-  static buscarPorNome(nome: string) {
-    return prisma.usuario.findMany({ where: { nome }, omit: semSenha });
+  static buscarPorNome(nome: string, db: Db = prisma) {
+    return db.usuario.findMany({ where: { nome }, omit: semSenha });
   }
 
-  static criar(usuario: NovoUsuario) {
-    const dados = {
-      nome: usuario.nome,
-      email: usuario.email,
-      senhaHash: usuario.senhaHash,
-      perfil: usuario.perfil,
-      ativo: usuario.ativo,
-      precisaTrocarSenha: usuario.precisaTrocarSenha,
-    } satisfies Prisma.UsuarioCreateInput;
-
-    return prisma.usuario.create({ data: dados, omit: semSenha });
+  static criar(usuario: DadosNovoUsuario, db: Db = prisma) {
+    return db.usuario.create({ data: usuario, omit: semSenha });
   }
 
-  static atualizar(id: number, usuario: DadosAtualizacaoUsuario) {
-    return prisma.usuario.update({
-      where: { id },
-      data: usuario,
-      omit: semSenha,
-    });
+  static atualizar(
+    id: number,
+    usuario: DadosAtualizacaoUsuario,
+    db: Db = prisma,
+  ) {
+    return db.usuario.update({ where: { id }, data: usuario, omit: semSenha });
   }
 
-  static buscarPorEmailComSenha(email: string) {
-    return prisma.usuario.findUnique({ where: { email } });
+  static buscarPorEmailComSenha(email: string, db: Db = prisma) {
+    return db.usuario.findUnique({ where: { email } });
   }
 
-  static buscarPorIdComSenha(id: number) {
-    return prisma.usuario.findUnique({ where: { id } });
+  static buscarPorIdComSenha(id: number, db: Db = prisma) {
+    return db.usuario.findUnique({ where: { id } });
   }
 }
