@@ -175,12 +175,39 @@ export const avisoSchema = z.object({
     .max(2000, "O texto deve ter no máximo 2000 caracteres."),
 });
 
+export const atualizarAvisoSchema = avisoSchema
+  .partial()
+  .refine((dados) => Object.keys(dados).length > 0, {
+    error: "Informe ao menos um campo para atualizar.",
+  });
+
 /* ------------------------------------------------------------------ */
 /* Parâmetros de URL                                                   */
 /* ------------------------------------------------------------------ */
 
 export const idParamSchema = z.object({ id });
 export const mesQuerySchema = z.object({ mes: competencia });
+
+export const filtrarCobrancasSchema = z.object({
+  mes: competencia.optional(),
+  status: z.enum(["PENDENTE", "PAGO"]).optional(), // use os valores reais do seu enum
+  casaId: id.optional(),
+});
+
+// Morador não escolhe casa: o service ignora qualquer casaId que venha dele
+export const filtrarCobrancasMoradorSchema = filtrarCobrancasSchema.omit({
+  casaId: true,
+});
+
+export const filtrarMoradoresSchema = z.object({
+  busca: z.string().trim().min(1).optional(),
+  ativo: z.stringbool().optional(),
+});
+
+export const filtrarAvisosSchema = z.object({
+  busca: z.string().trim().min(1).optional(),
+});
+
 
 /* ------------------------------------------------------------------ */
 /* Tipos TypeScript gerados a partir dos schemas                       */
@@ -197,3 +224,5 @@ export type GerarCobrancasInput = z.infer<typeof gerarCobrancasSchema>;
 export type PagamentoInput = z.infer<typeof pagamentoSchema>;
 export type AvisoInput = z.infer<typeof avisoSchema>;
 export type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
+export type AtualizarAvisoInput = z.infer<typeof atualizarAvisoSchema>;
+export type FiltrarAvisosInput = z.infer<typeof filtrarAvisosSchema>;
