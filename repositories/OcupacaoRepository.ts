@@ -13,7 +13,10 @@ export class OcupacaoRepository {
       include: {
         usuario: { omit: { senhaHash: true } },
       },
-      orderBy: { dataEntrada: "desc" },
+      orderBy: [
+        { dataSaida: { sort: "asc", nulls: "first" } },
+        { usuario: { nome: "asc" } },
+      ],
     });
   }
 
@@ -21,6 +24,19 @@ export class OcupacaoRepository {
     return db.ocupacao.findMany({
       where: { usuarioId },
       orderBy: { dataEntrada: "desc" },
+    });
+  }
+
+  static buscarMaisRecentePorMorador(usuarioId: number, db: Db = prisma) {
+    return db.ocupacao.findFirst({
+      where: { usuarioId },
+      include: {
+        usuario: { omit: { senhaHash: true } },
+      },
+      orderBy: [
+        { dataSaida: { sort: "asc", nulls: "first" } },
+        { dataEntrada: "desc" },
+      ],
     });
   }
 
@@ -33,11 +49,7 @@ export class OcupacaoRepository {
     });
   }
 
-  static buscarOcupanteNaData(
-    casaId: number,
-    data: Date,
-    db: Db = prisma,
-  ) {
+  static buscarOcupanteNaData(casaId: number, data: Date, db: Db = prisma) {
     return db.ocupacao.findFirst({
       where: {
         casaId,

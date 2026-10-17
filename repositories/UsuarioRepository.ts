@@ -1,5 +1,5 @@
-import { prisma, type Db } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma/client";
+import { prisma, type Db } from "@/lib/prisma";
 
 type DadosNovoUsuario = Pick<
   Prisma.UsuarioUncheckedCreateInput,
@@ -34,11 +34,7 @@ export class UsuarioRepository {
     return db.usuario.create({ data: usuario, omit: semSenha });
   }
 
-  static atualizar(
-    id: number,
-    usuario: DadosAtualizacaoUsuario,
-    db: Db = prisma,
-  ) {
+  static atualizar(id: number, usuario: DadosAtualizacaoUsuario, db: Db = prisma) {
     return db.usuario.update({ where: { id }, data: usuario, omit: semSenha });
   }
 

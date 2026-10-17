@@ -11,9 +11,23 @@ type DadosAtualizacaoAviso = Pick<
   "titulo" | "texto"
 >;
 
+type FiltrosAviso = {
+  busca?: string;
+};
+
 export class AvisoRepository {
-  static listar(db: Db = prisma) {
+  static listar(filtros: FiltrosAviso = {}, db: Db = prisma) {
+    const { busca } = filtros;
+
     return db.aviso.findMany({
+      where: busca
+        ? {
+            OR: [
+              { titulo: { contains: busca } },
+              { texto: { contains: busca } },
+            ],
+          }
+        : undefined,
       orderBy: { createdAt: "desc" },
     });
   }

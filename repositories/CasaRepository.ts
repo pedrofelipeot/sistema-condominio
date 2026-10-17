@@ -19,15 +19,11 @@ export class CasaRepository {
   }
 
   static buscarPorId(id: number, db: Db = prisma) {
-    return db.casa.findUnique({
-      where: { id },
-    });
+    return db.casa.findUnique({ where: { id } });
   }
 
   static buscarPorNumero(numero: number, db: Db = prisma) {
-    return db.casa.findUnique({
-      where: { numero },
-    });
+    return db.casa.findUnique({ where: { numero } });
   }
 
   static criar(casa: DadosNovaCasa, db: Db = prisma) {
@@ -42,8 +38,6 @@ export class CasaRepository {
   }
 
   static excluir(id: number, db: Db = prisma) {
-    return db.casa.delete({
-      where: { id },
-    });
+    return db.casa.delete({ where: { id } });
   }
 }

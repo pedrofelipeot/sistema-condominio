@@ -29,15 +29,19 @@ export class CobrancaRepository {
   static listarPorCasa(casaId: number, db: Db = prisma) {
     return db.cobranca.findMany({
       where: { casaId },
-      orderBy: { vencimento: "desc" },
+      orderBy: { competencia: "desc" },
+    });
+  }
+
+  static listarPorCompetencia(competencia: string, db: Db = prisma) {
+    return db.cobranca.findMany({
+      where: { competencia },
+      orderBy: { casaId: "asc" },
     });
   }
 
   static buscarPorId(id: number, db: Db = prisma) {
-    return db.cobranca.findUnique({
-      where: { id },
-      include: { casa: true },
-    });
+    return db.cobranca.findUnique({ where: { id }, include: { casa: true } });
   }
 
   static listarPorPeriodos(
