@@ -40,14 +40,12 @@ export class OcupacaoRepository {
     });
   }
 
-  static buscarAtualDaCasa(casaId: number, db: Db = prisma) {
-    return db.ocupacao.findFirst({
-      where: { casaId, dataSaida: null },
-      include: {
-        usuario: { omit: { senhaHash: true } },
-      },
-    });
-  }
+  static listarAtuaisDaCasa(casaId: number, db: Db = prisma) {
+  return db.ocupacao.findMany({
+    where: { casaId, dataSaida: null },
+    include: { usuario: { omit: { senhaHash: true } } },
+  });
+}
 
   static buscarOcupanteNaData(casaId: number, data: Date, db: Db = prisma) {
     return db.ocupacao.findFirst({
@@ -77,19 +75,6 @@ export class OcupacaoRepository {
     return db.ocupacao.findFirst({
       where: {
         usuarioId,
-        OR: [{ dataSaida: null }, { dataSaida: { gte: dataEntrada } }],
-      },
-    });
-  }
-
-  static buscarPeriodoSobrepostoNaCasa(
-    casaId: number,
-    dataEntrada: Date,
-    db: Db = prisma,
-  ) {
-    return db.ocupacao.findFirst({
-      where: {
-        casaId,
         OR: [{ dataSaida: null }, { dataSaida: { gte: dataEntrada } }],
       },
     });

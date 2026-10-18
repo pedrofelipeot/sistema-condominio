@@ -14,9 +14,22 @@ type DadosAtualizacaoUsuario = Pick<
 const semSenha = { senhaHash: true } as const;
 
 export class UsuarioRepository {
-  static listar(db: Db = prisma) {
-    return db.usuario.findMany({ omit: semSenha });
-  }
+ static listarMoradores(
+  filtros: { busca?: string; ativo?: boolean } = {},
+  db: Db = prisma,
+) {
+  const { busca, ativo } = filtros;
+
+  return db.usuario.findMany({
+    where: {
+      perfil: "MORADOR",
+      ativo,
+      ...(busca && { nome: { contains: busca } }),
+    },
+    orderBy: { nome: "asc" },
+    omit: semSenha,
+  });
+}
 
   static buscarPorId(id: number, db: Db = prisma) {
     return db.usuario.findUnique({ where: { id }, omit: semSenha });
