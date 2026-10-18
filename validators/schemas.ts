@@ -78,13 +78,6 @@ export const loginSchema = z.object({
   senha: z.string({ error: "Informe a senha." }).min(1, "Informe a senha."),
 });
 
-export const atualizarUsuarioSchema = z
-  .object({ nome, email })
-  .partial()
-  .refine((dados) => Object.keys(dados).length > 0, {
-    error: "Informe ao menos um campo para atualizar.",
-  });
-
 export const trocarSenhaSchema = z
   .object({
     senhaAtual: z.string({ error: "Informe a senha atual." }).min(1, "Informe a senha atual."),
@@ -101,11 +94,23 @@ export const redefinirSenhaSchema = z.object({ novaSenha: senhaNova });
 
 export const novoAdminSchema = z.object({ nome, email, senha: senhaNova });
 
+export const atualizarUsuarioSchema = z
+  .object({ nome, email })
+  .partial()
+  .refine((dados) => Object.keys(dados).length > 0, {
+    error: "Informe ao menos um campo para atualizar.",
+  });
+
 /* ------------------------------------------------------------------ */
 /* Casas e moradores                                                   */
 /* ------------------------------------------------------------------ */
 
 export const casaSchema = z.object({
+  numero: z.coerce
+    .number({ error: "Informe o número da casa." })
+    .int("O número da casa deve ser um número inteiro.")
+    .min(1, "Número da casa inválido.")
+    .max(9999, "Número da casa inválido."),
   quartos: z.coerce
     .number({ error: "Informe a quantidade de quartos." })
     .int("A quantidade de quartos deve ser um número inteiro.")
@@ -136,6 +141,12 @@ export const casaSchema = z.object({
     .min(1, "Use um dia entre 1 e 28.")
     .max(28, "Use um dia entre 1 e 28."),
 });
+
+export const atualizarCasaSchema = casaSchema
+  .partial()
+  .refine((dados) => Object.keys(dados).length > 0, {
+    error: "Informe ao menos um campo para atualizar.",
+  });
 
 export const novoMoradorSchema = z.object({
   nome,
@@ -182,7 +193,7 @@ export const atualizarAvisoSchema = avisoSchema
   });
 
 /* ------------------------------------------------------------------ */
-/* Parâmetros de URL                                                   */
+/* Parâmetros de URL e filtros de listagem (tudo opcional)             */
 /* ------------------------------------------------------------------ */
 
 export const idParamSchema = z.object({ id });
@@ -190,11 +201,11 @@ export const mesQuerySchema = z.object({ mes: competencia });
 
 export const filtrarCobrancasSchema = z.object({
   mes: competencia.optional(),
-  status: z.enum(["PENDENTE", "PAGO"]).optional(), // use os valores reais do seu enum
+  status: z.enum(["PENDENTE", "PAGA"]).optional(),
   casaId: id.optional(),
 });
 
-// Morador não escolhe casa: o service ignora qualquer casaId que venha dele
+// Morador não escolhe casa: a visibilidade dele vem das ocupações
 export const filtrarCobrancasMoradorSchema = filtrarCobrancasSchema.omit({
   casaId: true,
 });
@@ -208,7 +219,6 @@ export const filtrarAvisosSchema = z.object({
   busca: z.string().trim().min(1).optional(),
 });
 
-
 /* ------------------------------------------------------------------ */
 /* Tipos TypeScript gerados a partir dos schemas                       */
 /* ------------------------------------------------------------------ */
@@ -217,12 +227,16 @@ export type LoginInput = z.infer<typeof loginSchema>;
 export type TrocarSenhaInput = z.infer<typeof trocarSenhaSchema>;
 export type RedefinirSenhaInput = z.infer<typeof redefinirSenhaSchema>;
 export type NovoAdminInput = z.infer<typeof novoAdminSchema>;
+export type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
 export type CasaInput = z.infer<typeof casaSchema>;
+export type AtualizarCasaInput = z.infer<typeof atualizarCasaSchema>;
 export type NovoMoradorInput = z.infer<typeof novoMoradorSchema>;
 export type RegistrarSaidaInput = z.infer<typeof registrarSaidaSchema>;
 export type GerarCobrancasInput = z.infer<typeof gerarCobrancasSchema>;
 export type PagamentoInput = z.infer<typeof pagamentoSchema>;
 export type AvisoInput = z.infer<typeof avisoSchema>;
-export type AtualizarUsuarioInput = z.infer<typeof atualizarUsuarioSchema>;
 export type AtualizarAvisoInput = z.infer<typeof atualizarAvisoSchema>;
+export type FiltrarCobrancasInput = z.infer<typeof filtrarCobrancasSchema>;
+export type FiltrarCobrancasMoradorInput = z.infer<typeof filtrarCobrancasMoradorSchema>;
+export type FiltrarMoradoresInput = z.infer<typeof filtrarMoradoresSchema>;
 export type FiltrarAvisosInput = z.infer<typeof filtrarAvisosSchema>;
