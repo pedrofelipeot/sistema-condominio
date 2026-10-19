@@ -1,6 +1,7 @@
 import { AppError } from "@/errors/AppError";
 import { fimDoDiaUTC, inicioDoDiaUTC } from "@/lib/date";
 import { prisma, type Db } from "@/lib/prisma";
+import { exigirAdmin, Solicitante } from "@/lib/sessao";
 import type { Morador } from "@/lib/types";
 import { CasaRepository } from "@/repositories/CasaRepository";
 import { OcupacaoRepository } from "@/repositories/OcupacaoRepository";
@@ -28,10 +29,59 @@ export class OcupacaoService {
     };
   }
 
-  static async listarPorCasa(casaId: number): Promise<Morador[]> {
-    const ocupacoes = await OcupacaoRepository.listarPorCasa(casaId);
-    return ocupacoes.map(OcupacaoService.paraMorador);
+    static async listarComMoradores() {
+  const [casas, ocupacoes] = await Promise.all([
+    CasaRepository.listar(),
+    OcupacaoRepository.listarAtuais(),
+  ]);
+
+  return casas.map((casa) => ({
+    ...casa,
+    moradores: ocupacoes
+      .filter((o) => o.casaId === casa.id)
+      .map((o) => ({
+        id: o.usuario.id,
+        nome: o.usuario.nome,
+        email: o.usuario.email,
+        dataEntrada: o.dataEntrada,
+      })),
+  }));
+}
+
+  static async listarPorCasa(casaId: number, solicitante: Solicitante) {
+  exigirAdmin(solicitante);
+
+  const casa = await CasaRepository.buscarPorId(casaId);
+  if (!casa) throw new AppError("Casa não encontrada.", 404);
+
+  return OcupacaoRepository.listarPorCasa(casaId);
+}
+
+static async minhaOcupacao(solicitante: Solicitante) {
+  if (solicitante.perfil !== "MORADOR") {
+    throw new AppError("Apenas moradores possuem casa vinculada.", 403);
   }
+
+  const ocupacao = await OcupacaoRepository.buscarOcupacaoAtiva(solicitante.id);
+  if (!ocupacao) {
+    throw new AppError("Você não possui uma ocupação ativa.", 404);
+  }
+
+  const [usuario, casa] = await Promise.all([
+    UsuarioRepository.buscarPorId(solicitante.id),
+    CasaRepository.buscarPorId(ocupacao.casaId),
+  ]);
+
+  if (!usuario || !casa) {
+    throw new AppError("Dados da moradia não encontrados.", 404);
+  }
+
+  return {
+    morador: { id: usuario.id, nome: usuario.nome, email: usuario.email },
+    casa,
+    dataEntrada: ocupacao.dataEntrada,
+  };
+}
 
   static listarPorMorador(usuarioId: number) {
     return OcupacaoRepository.listarPorMorador(usuarioId);

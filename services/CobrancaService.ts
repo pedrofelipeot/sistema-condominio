@@ -109,6 +109,15 @@ export class CobrancaService {
     });
   }
 
+  static async listarPorCasa(casaId: number, solicitante: Solicitante) {
+  exigirAdmin(solicitante);
+
+  const casa = await CasaRepository.buscarPorId(casaId);
+  if (!casa) throw new AppError("Casa não encontrada.", 404);
+
+  return CobrancaRepository.listarPorCasa(casaId);
+}
+
   /* ------------------------------------------------------------ */
   /* AUXILIAR PRIVADO                                              */
   /* ------------------------------------------------------------ */

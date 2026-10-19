@@ -47,6 +47,13 @@ export class OcupacaoRepository {
   });
 }
 
+static listarAtuais(db: Db = prisma) {
+  return db.ocupacao.findMany({
+    where: { dataSaida: null },
+    include: { usuario: { omit: { senhaHash: true } } },
+  });
+}
+
   static buscarOcupanteNaData(casaId: number, data: Date, db: Db = prisma) {
     return db.ocupacao.findFirst({
       where: {

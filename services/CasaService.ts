@@ -1,11 +1,34 @@
 import { AppError } from "@/errors/AppError";
 import { exigirAdmin, type Solicitante } from "@/lib/sessao";
 import { CasaRepository } from "@/repositories/CasaRepository";
+import { OcupacaoRepository } from "@/repositories/OcupacaoRepository";
 import type { AtualizarCasaInput } from "@/validators/schemas";
 
 export class CasaService {
-  static async listar() {
+  static listar() {
     return CasaRepository.listar();
+  }
+
+  // Casas com a lista de moradores atuais (uma consulta para todas as casas)
+  static async listarComMoradores(solicitante: Solicitante) {
+    exigirAdmin(solicitante);
+
+    const [casas, ocupacoes] = await Promise.all([
+      CasaRepository.listar(),
+      OcupacaoRepository.listarAtuais(),
+    ]);
+
+    return casas.map((casa) => ({
+      ...casa,
+      moradores: ocupacoes
+        .filter((o) => o.casaId === casa.id)
+        .map((o) => ({
+          id: o.usuario.id,
+          nome: o.usuario.nome,
+          email: o.usuario.email,
+          dataEntrada: o.dataEntrada,
+        })),
+    }));
   }
 
   static async buscarPorId(id: number) {
@@ -42,6 +65,4 @@ export class CasaService {
       diaVencimento: casa.diaVencimento,
     });
   }
-
-  
 }
