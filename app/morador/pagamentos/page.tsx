@@ -1,33 +1,79 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import PagamentosMorador from "@/app/components/PagamentosMorador";
+import { api, ErroApi } from "@/lib/api-cliente";
 import {
-  buscarCasa,
-  buscarMorador,
-  listarCobrancasDaCasa,
-} from "@/lib/mock-data";
-import { notFound } from "next/navigation";
+  converterCasa,
+  converterCobranca,
+  converterMorador,
+  type CobrancaApi,
+  type MinhaCasaApi,
+} from "@/lib/conversores";
+import type { Casa, Cobranca, Morador } from "@/lib/types";
 
-export default async function PagamentosPage() {
-  // TODO(auth): substituir o ID fixo pelo ID do morador autenticado na sessão.
-  const moradorId = 1;
-  const morador = await buscarMorador(moradorId);
+export default function PagamentosPage() {
+  const [morador, setMorador] = useState<Morador | null>(null);
+  const [casa, setCasa] = useState<Casa | null>(null);
+  const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
-  if (!morador) {
-    return notFound();
+  useEffect(() => {
+    let cancelado = false;
+
+    Promise.all([
+      api<MinhaCasaApi>("/api/morador/minha-casa"),
+      api<CobrancaApi[]>("/api/morador/cobrancas"),
+    ])
+      .then(([minhaCasa, cobrancasApi]) => {
+        if (cancelado) return;
+        setMorador(converterMorador(minhaCasa));
+        setCasa(converterCasa(minhaCasa.casa));
+        setCobrancas(cobrancasApi.map(converterCobranca));
+      })
+      .catch((e: unknown) => {
+        if (cancelado) return;
+        setErro(e instanceof ErroApi ? e.message : "Erro inesperado. Tente novamente.");
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  if (carregando) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div
+          role="status"
+          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        >
+          Carregando seus pagamentos...
+        </div>
+      </div>
+    );
   }
 
-  const casa = await buscarCasa(morador.casaId);
-
-  if (!casa) {
-    return notFound();
+  if (erro || !morador || !casa) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div
+          role="alert"
+          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+        >
+          {erro ?? "Não foi possível carregar seus dados."}
+        </div>
+      </div>
+    );
   }
-
-  const cobrancas = await listarCobrancasDaCasa(casa.id);
 
   return (
-    <PagamentosMorador
-      morador={morador}
-      casa={casa}
-      cobrancas={cobrancas}
-    />
+    <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <PagamentosMorador morador={morador} casa={casa} cobrancas={cobrancas} />
+    </div>
   );
 }

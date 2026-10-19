@@ -1,33 +1,88 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { formatarData, formatarMoeda } from "@/lib/format";
+import { api, ErroApi } from "@/lib/api-cliente";
 import {
-  buscarCasa,
-  buscarMorador,
-  listarAvisos,
-  listarCobrancasDaCasa,
-} from "@/lib/mock-data";
+  converterCasa,
+  converterCobranca,
+  converterMorador,
+  type CobrancaApi,
+  type MinhaCasaApi,
+} from "@/lib/conversores";
+import { formatarData, formatarMoeda } from "@/lib/format";
 import { statusDaCobranca } from "@/lib/status";
-import { notFound } from "next/navigation";
+import type { Aviso, Casa, Cobranca, Morador } from "@/lib/types";
 
-export default async function MoradorPage() {
-  // TODO(auth): substituir o ID fixo pelo ID do morador autenticado na sessão.
-  const moradorId = 1;
-  const morador = await buscarMorador(moradorId);
+type AvisoApi = Omit<Aviso, "createdAt"> & { createdAt: string };
 
-  if (!morador) {
-    return notFound();
+export default function MoradorPage() {
+  const [morador, setMorador] = useState<Morador | null>(null);
+  const [casa, setCasa] = useState<Casa | null>(null);
+  const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    Promise.all([
+      api<MinhaCasaApi>("/api/morador/minha-casa"),
+      api<CobrancaApi[]>("/api/morador/cobrancas"),
+      api<AvisoApi[]>("/api/avisos"),
+    ])
+      .then(([minhaCasa, cobrancasApi, avisosApi]) => {
+        if (cancelado) return;
+        setMorador(converterMorador(minhaCasa));
+        setCasa(converterCasa(minhaCasa.casa));
+        setCobrancas(cobrancasApi.map(converterCobranca));
+        setAvisos(
+          avisosApi.map((aviso) => ({
+            ...aviso,
+            createdAt: new Date(aviso.createdAt),
+          })),
+        );
+      })
+      .catch((e: unknown) => {
+        if (cancelado) return;
+        setErro(e instanceof ErroApi ? e.message : "Erro inesperado. Tente novamente.");
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  if (carregando) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div
+          role="status"
+          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        >
+          Carregando seu resumo...
+        </div>
+      </div>
+    );
   }
 
-  const [casa, avisos] = await Promise.all([
-    buscarCasa(morador.casaId),
-    listarAvisos(),
-  ]);
-
-  if (!casa) {
-    return notFound();
+  if (erro || !morador || !casa) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+        <div
+          role="alert"
+          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+        >
+          {erro ?? "Não foi possível carregar seus dados."}
+        </div>
+      </div>
+    );
   }
 
-  const cobrancas = await listarCobrancasDaCasa(casa.id);
   const cobrancasEmAberto = cobrancas
     .filter((cobranca) => cobranca.status === "PENDENTE")
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime());
@@ -35,7 +90,7 @@ export default async function MoradorPage() {
   const avisoMaisRecente = avisos[0];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
       <header className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-9 text-white shadow-xl shadow-slate-900/10 sm:px-10 sm:py-11">
         <div
           aria-hidden="true"

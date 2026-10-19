@@ -1,12 +1,48 @@
-import { formatarData } from "@/lib/format";
-import { listarAvisos } from "@/lib/mock-data";
+"use client";
 
-export default async function AvisosPage() {
-  const avisos = await listarAvisos();
+import { useEffect, useState } from "react";
+import { api, ErroApi } from "@/lib/api-cliente";
+import { formatarData } from "@/lib/format";
+import type { Aviso } from "@/lib/types";
+
+type AvisoApi = Omit<Aviso, "createdAt"> & { createdAt: string };
+
+export default function AvisosPage() {
+  const [avisos, setAvisos] = useState<Aviso[]>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    api<AvisoApi[]>("/api/avisos")
+      .then((dados) => {
+        if (!cancelado) {
+          setAvisos(
+            dados.map((aviso) => ({
+              ...aviso,
+              createdAt: new Date(aviso.createdAt),
+            })),
+          );
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelado) return;
+        setErro(e instanceof ErroApi ? e.message : "Erro inesperado. Tente novamente.");
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const [avisoMaisRecente, ...avisosAnteriores] = avisos;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <div className="mx-auto w-full max-w-4xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
       <header className="relative overflow-hidden rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-slate-50 px-7 py-9 sm:px-10 sm:py-11">
         <div
           aria-hidden="true"
@@ -40,6 +76,21 @@ export default async function AvisosPage() {
         </div>
       </header>
 
+      {carregando ? (
+        <div
+          role="status"
+          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        >
+          Carregando os avisos...
+        </div>
+      ) : erro ? (
+        <div
+          role="alert"
+          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+        >
+          {erro}
+        </div>
+      ) : (
       <section aria-labelledby="avisos-morador-titulo">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -146,6 +197,7 @@ export default async function AvisosPage() {
           </div>
         )}
       </section>
+      )}
     </div>
   );
 }

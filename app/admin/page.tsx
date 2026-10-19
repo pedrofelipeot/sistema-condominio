@@ -1,10 +1,14 @@
-
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PainelMensal from "../components/PainelMensal";
-import { listarCasas, listarTodasCobrancas } from "@/lib/mock-data";
-import { useEffect } from "react";
+import { api, ErroApi } from "@/lib/api-cliente";
+import {
+  converterCasa,
+  converterCobranca,
+  type CasaApi,
+  type CobrancaApi,
+} from "@/lib/conversores";
 import type { Casa, Cobranca } from "@/lib/types";
 
 export default function AdminPage() {
@@ -12,35 +16,48 @@ export default function AdminPage() {
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
   const [mes, setMes] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
 
   useEffect(() => {
-    async function carregarDados() {
-      const casasCarregadas = await listarCasas();
-      const cobrancasCarregadas = await listarTodasCobrancas();
+    let cancelado = false;
 
-      setCasas(casasCarregadas);
-      setCobrancas(cobrancasCarregadas);
+    Promise.all([
+      api<CasaApi[]>("/api/casas"),
+      api<CobrancaApi[]>("/api/cobrancas"),
+    ])
+      .then(([casasApi, cobrancasApi]) => {
+        if (cancelado) return;
 
-      const mesesDisponiveis = [
-        ...new Set(
-          cobrancasCarregadas.map((c) => c.competencia)
-        ),
-      ].sort().reverse();
+        const cobrancasConvertidas = cobrancasApi.map(converterCobranca);
+        setCasas(casasApi.map(converterCasa));
+        setCobrancas(cobrancasConvertidas);
 
-      setMes(mesesDisponiveis[0] ?? "");
-      setCarregando(false);
-    }
+        // seleciona o mês mais recente que tenha cobranças
+        const disponiveis = [
+          ...new Set(cobrancasConvertidas.map((c) => c.competencia)),
+        ]
+          .sort()
+          .reverse();
+        setMes(disponiveis[0] ?? "");
+      })
+      .catch((e) => {
+        if (cancelado) return;
+        setErro(e instanceof ErroApi ? e.message : "Erro inesperado. Tente novamente.");
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false);
+      });
 
-    carregarDados();
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
-  const meses = [
-    ...new Set(cobrancas.map((c) => c.competencia)),
-  ].sort().reverse();
+  const meses = [...new Set(cobrancas.map((c) => c.competencia))]
+    .sort()
+    .reverse();
 
-  const cobrancasDoMes = cobrancas.filter(
-    (c) => c.competencia === mes
-  );
+  const cobrancasDoMes = cobrancas.filter((c) => c.competencia === mes);
 
   return (
     <div className="space-y-8">
@@ -120,6 +137,13 @@ export default function AdminPage() {
           className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
         >
           Carregando o resumo das cobranças...
+        </div>
+      ) : erro ? (
+        <div
+          role="alert"
+          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+        >
+          {erro}
         </div>
       ) : (
         <PainelMensal casas={casas} cobrancas={cobrancasDoMes} />
