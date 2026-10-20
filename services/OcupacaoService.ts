@@ -1,7 +1,7 @@
 import { AppError } from "@/errors/AppError";
 import { fimDoDiaUTC, inicioDoDiaUTC } from "@/lib/date";
 import { prisma, type Db } from "@/lib/prisma";
-import { exigirAdmin, Solicitante } from "@/lib/sessao";
+import { exigirAdmin, type Solicitante } from "@/lib/sessao";
 import type { Morador } from "@/lib/types";
 import { CasaRepository } from "@/repositories/CasaRepository";
 import { OcupacaoRepository } from "@/repositories/OcupacaoRepository";
@@ -136,10 +136,16 @@ static async minhaOcupacao(solicitante: Solicitante) {
     });
   }
 
-  static encerrarMoradia(usuarioId: number, dataSaida: Date) {
+  static encerrarMoradia(
+    usuarioId: number,
+    dataSaida: Date,
+    solicitante: Solicitante,
+  ) {
+    exigirAdmin(solicitante);
     const saida = fimDoDiaUTC(dataSaida);
 
     return prisma.$transaction(async (tx) => {
+      await OcupacaoService.exigirMorador(usuarioId, tx);
       const ocupacao = await OcupacaoRepository.buscarOcupacaoAtiva(usuarioId, tx);
       if (!ocupacao) {
         throw new AppError("O morador não possui uma ocupação ativa.", 404);
@@ -195,28 +201,85 @@ static async minhaOcupacao(solicitante: Solicitante) {
     await OcupacaoService.exigirCasa(dados.casaId, tx); // 404
 
     const existente = await UsuarioRepository.buscarPorEmail(dados.email, tx);
-    if (existente) throw new AppError("E-mail já cadastrado.", 409);
+    if (!existente) {
+      const novo = await UsuarioRepository.criar(
+        {
+          nome: dados.nome,
+          email: dados.email,
+          senhaHash,
+          perfil: "MORADOR",
+          ativo: true,
+          precisaTrocarSenha: false,
+        },
+        tx,
+      );
 
-    const novo = await UsuarioRepository.criar(
+      await OcupacaoRepository.criar(
+        { usuarioId: novo.id, casaId: dados.casaId, dataEntrada: entrada },
+        tx,
+      );
+      await ConviteRepository.criar(
+        { usuarioId: novo.id, tokenHash, expiraEm },
+        tx,
+      );
+
+      return novo;
+    }
+
+    if (existente.perfil !== "MORADOR" || existente.ativo) {
+      throw new AppError("E-mail já cadastrado.", 409);
+    }
+
+    const ocupacaoAtiva = await OcupacaoRepository.buscarOcupacaoAtiva(
+      existente.id,
+      tx,
+    );
+    if (ocupacaoAtiva) {
+      throw new AppError(
+        "Este cadastro está inativo, mas ainda possui uma ocupação ativa.",
+        409,
+      );
+    }
+
+    const periodoSobreposto =
+      await OcupacaoRepository.buscarPeriodoSobreposto(
+        existente.id,
+        entrada,
+        tx,
+      );
+    if (periodoSobreposto) {
+      throw new AppError(
+        "O período de residência do morador se sobrepõe a outro período.",
+        409,
+      );
+    }
+
+    const reativado = await UsuarioRepository.atualizar(
+      existente.id,
       {
         nome: dados.nome,
-        email: dados.email,
-        senhaHash,
-        perfil: "MORADOR",
         ativo: true,
-        precisaTrocarSenha: false, // ele escolhe a própria senha
+        senhaHash,
+        precisaTrocarSenha: false,
       },
       tx,
     );
 
     await OcupacaoRepository.criar(
-      { usuarioId: novo.id, casaId: dados.casaId, dataEntrada: entrada },
+      {
+        usuarioId: reativado.id,
+        casaId: dados.casaId,
+        dataEntrada: entrada,
+      },
+      tx,
+    );
+    await ConviteRepository.invalidarPendentesDoUsuario(reativado.id, tx);
+    await ConviteRepository.criar(
+      { usuarioId: reativado.id, tokenHash, expiraEm },
       tx,
     );
 
-    await ConviteRepository.criar({ usuarioId: novo.id, tokenHash, expiraEm }, tx);
-
-    return novo;
+    return reativado;
   });
 
   // 4. O link só existe aqui, na resposta: o token puro não fica guardado

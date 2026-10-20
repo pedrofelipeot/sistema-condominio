@@ -1,16 +1,23 @@
 "use client"
 
+import { useState } from "react";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { statusDaCobranca } from "@/lib/status";
 import type { Casa, Cobranca } from "@/lib/types";
 
 type Props = { casas: Casa[]; cobrancas: Cobranca[] };
+type FiltroStatus = "Paga" | "Em atraso" | "Pendente" | "Sem cobrança";
 
 export default function PainelMensal({ casas, cobrancas }: Props) {
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus | null>(null);
   const linhas = casas.map((casa) => {
     const cobranca = cobrancas.find((item) => item.casaId === casa.id);
     return { casa, cobranca, status: statusDaCobranca(cobranca) };
   });
+  const linhasFiltradas =
+    filtroStatus === null
+      ? linhas
+      : linhas.filter((linha) => linha.status === filtroStatus);
   const pagas = linhas.filter((linha) => linha.status === "Paga").length;
   const emAtraso = linhas.filter((linha) => linha.status === "Em atraso").length;
   const pendentes = linhas.filter((linha) => linha.status === "Pendente").length;
@@ -103,9 +110,48 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
               Situação de cada casa na competência selecionada.
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-            {casas.length} {casas.length === 1 ? "unidade" : "unidades"}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              aria-label="Filtrar unidades por status"
+              className="flex flex-wrap gap-2"
+              role="group"
+            >
+              {(
+                [
+                  { status: null, rotulo: "Todas" },
+                  { status: "Paga", rotulo: "Pagas" },
+                  { status: "Em atraso", rotulo: "Em atraso" },
+                  { status: "Pendente", rotulo: "Pendentes" },
+                  { status: "Sem cobrança", rotulo: "Casas vazias" },
+                ] as const
+              ).map(({ status, rotulo }) => (
+                <button
+                  key={status ?? "todas"}
+                  type="button"
+                  aria-pressed={filtroStatus === status}
+                  onClick={() =>
+                    setFiltroStatus(
+                      status !== null && filtroStatus === status ? null : status,
+                    )
+                  }
+                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 ${
+                    filtroStatus === status
+                      ? "border-blue-600 bg-blue-600 text-white"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  }`}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+            <span
+              aria-live="polite"
+              className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600"
+            >
+              {linhasFiltradas.length}{" "}
+              {linhasFiltradas.length === 1 ? "unidade" : "unidades"}
+            </span>
+          </div>
         </div>
 
         {casas.length === 0 ? (
@@ -126,7 +172,7 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {linhas.map((linha) => (
+                {linhasFiltradas.map((linha) => (
                   <tr
                     key={linha.casa.id}
                     className="transition-colors hover:bg-slate-50/80"
@@ -162,6 +208,16 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
                     </td>
                   </tr>
                 ))}
+                {linhasFiltradas.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-6 py-12 text-center text-sm text-slate-500"
+                    >
+                      Nenhuma unidade encontrada com este status.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>

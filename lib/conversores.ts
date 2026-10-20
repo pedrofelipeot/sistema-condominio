@@ -56,6 +56,7 @@ export type OcupacaoApi = {
 
 export type MoradorDaCasa = {
   id: number; // id da ocupação: o mesmo morador pode ter mais de um período
+  usuarioId: number;
   nome: string;
   email: string;
   ativo: boolean;
@@ -66,6 +67,7 @@ export type MoradorDaCasa = {
 export function converterOcupacao(o: OcupacaoApi): MoradorDaCasa {
   return {
     id: o.id,
+    usuarioId: o.usuario.id,
     nome: o.usuario.nome,
     email: o.usuario.email,
     ativo: o.dataSaida === null,

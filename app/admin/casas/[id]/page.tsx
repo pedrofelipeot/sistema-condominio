@@ -13,8 +13,12 @@ import {
   type OcupacaoApi,
 } from "@/lib/conversores";
 import { formatarData, formatarMoeda } from "@/lib/format";
+import { statusDaCobranca } from "@/lib/status";
 import Link from "next/link";
 import type { Casa, Cobranca } from "@/lib/types";
+
+const COBRANCAS_POR_PAGINA = 12;
+type FiltroStatusCobranca = "Todas" | "Paga" | "Pendente" | "Em atraso";
 
 export default function CasaIdPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +31,11 @@ function DetalhesCasa({ id }: { id: string }) {
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<{ mensagem: string; status?: number } | null>(null);
+  const [erroDesativacao, setErroDesativacao] = useState<string | null>(null);
+  const [desativandoMoradorId, setDesativandoMoradorId] = useState<number | null>(null);
+  const [anoFiltro, setAnoFiltro] = useState("todos");
+  const [statusFiltro, setStatusFiltro] = useState<FiltroStatusCobranca>("Todas");
+  const [paginaCobrancas, setPaginaCobrancas] = useState(1);
 
   useEffect(() => {
     let cancelado = false;
@@ -58,6 +67,43 @@ function DetalhesCasa({ id }: { id: string }) {
       cancelado = true;
     };
   }, [id]);
+
+  async function desativarMorador(morador: MoradorDaCasa) {
+    const dataSaida = new Date().toLocaleDateString("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+    });
+    const confirmar = window.confirm(
+      `Desativar ${morador.nome}? A ocupação será encerrada com data de saída de hoje, o acesso ao sistema será removido e o histórico da casa será mantido.`,
+    );
+    if (!confirmar) return;
+
+    setErroDesativacao(null);
+    setDesativandoMoradorId(morador.usuarioId);
+    try {
+      const ocupacao = await api<{ id: number; dataSaida: string }>(
+        `/api/morador/${morador.usuarioId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ dataSaida }),
+        },
+      );
+      setMoradores((atuais) =>
+        atuais.map((item) =>
+          item.id === ocupacao.id
+            ? { ...item, ativo: false, dataSaida: new Date(ocupacao.dataSaida) }
+            : item,
+        ),
+      );
+    } catch (error) {
+      setErroDesativacao(
+        error instanceof ErroApi
+          ? error.message
+          : "Não foi possível desativar o morador. Tente novamente.",
+      );
+    } finally {
+      setDesativandoMoradorId(null);
+    }
+  }
 
   if (carregando) {
     return (
@@ -93,6 +139,33 @@ function DetalhesCasa({ id }: { id: string }) {
 
   const ocupada = moradores.some((morador) => morador.ativo);
   const moradoresAtivos = moradores.filter((morador) => morador.ativo).length;
+  const anosCobrancas = [...new Set(cobrancas.map((cobranca) => cobranca.competencia.slice(0, 4)))]
+    .sort()
+    .reverse();
+  const cobrancasFiltradas = cobrancas.filter((cobranca) => {
+    const anoCorresponde =
+      anoFiltro === "todos" || cobranca.competencia.startsWith(`${anoFiltro}-`);
+    const statusCorresponde =
+      statusFiltro === "Todas" || statusDaCobranca(cobranca) === statusFiltro;
+    return anoCorresponde && statusCorresponde;
+  });
+  const totalPaginas = Math.max(
+    1,
+    Math.ceil(cobrancasFiltradas.length / COBRANCAS_POR_PAGINA),
+  );
+  const paginaAtual = Math.min(paginaCobrancas, totalPaginas);
+  const cobrancasVisiveis = cobrancasFiltradas.slice(
+    (paginaAtual - 1) * COBRANCAS_POR_PAGINA,
+    paginaAtual * COBRANCAS_POR_PAGINA,
+  );
+  const primeiraCobrancaVisivel =
+    cobrancasFiltradas.length === 0
+      ? 0
+      : (paginaAtual - 1) * COBRANCAS_POR_PAGINA + 1;
+  const ultimaCobrancaVisivel = Math.min(
+    paginaAtual * COBRANCAS_POR_PAGINA,
+    cobrancasFiltradas.length,
+  );
 
   return (
     <div className="space-y-8">
@@ -214,6 +287,15 @@ function DetalhesCasa({ id }: { id: string }) {
     </div>
   </div>
 
+  {erroDesativacao && (
+    <p
+      role="alert"
+      className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+    >
+      {erroDesativacao}
+    </p>
+  )}
+
   {moradores.length === 0 ? (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
       <h3 className="text-base font-semibold text-slate-900">
@@ -259,6 +341,18 @@ function DetalhesCasa({ id }: { id: string }) {
               </dd>
             </div>
           </dl>
+          {morador.ativo && (
+            <button
+              type="button"
+              onClick={() => void desativarMorador(morador)}
+              disabled={desativandoMoradorId !== null}
+              className="mt-5 rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-600/15 disabled:cursor-wait disabled:opacity-60"
+            >
+              {desativandoMoradorId === morador.usuarioId
+                ? "Desativando..."
+                : "Desativar morador"}
+            </button>
+          )}
         </li>
       ))}
     </ul>
@@ -275,12 +369,45 @@ function DetalhesCasa({ id }: { id: string }) {
               Cobranças
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              Histórico de valores e pagamentos desta unidade.
+              Histórico de cobranças da Casa {casa.numero}, das mais recentes às mais antigas.
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-            {cobrancas.length} {cobrancas.length === 1 ? "cobrança" : "cobranças"}
-          </span>
+          {cobrancas.length > 0 && (
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="text-sm font-medium text-slate-700">
+                Ano
+                <select
+                  value={anoFiltro}
+                  onChange={(event) => {
+                    setAnoFiltro(event.target.value);
+                    setPaginaCobrancas(1);
+                  }}
+                  className="mt-1 block min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                >
+                  <option value="todos">Todos</option>
+                  {anosCobrancas.map((ano) => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-sm font-medium text-slate-700">
+                Status
+                <select
+                  value={statusFiltro}
+                  onChange={(event) => {
+                    setStatusFiltro(event.target.value as FiltroStatusCobranca);
+                    setPaginaCobrancas(1);
+                  }}
+                  className="mt-1 block min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                >
+                  <option value="Todas">Todos</option>
+                  <option value="Paga">Paga</option>
+                  <option value="Pendente">Pendente</option>
+                  <option value="Em atraso">Em atraso</option>
+                </select>
+              </label>
+            </div>
+          )}
         </div>
 
         {cobrancas.length === 0 ? (
@@ -292,60 +419,109 @@ function DetalhesCasa({ id }: { id: string }) {
               As cobranças desta casa aparecerão aqui.
             </p>
           </div>
+        ) : cobrancasFiltradas.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <p className="text-sm text-slate-600">
+              Nenhuma cobrança encontrada com os filtros selecionados.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setAnoFiltro("todos");
+                setStatusFiltro("Todas");
+                setPaginaCobrancas(1);
+              }}
+              className="mt-3 text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Limpar filtros
+            </button>
+          </div>
         ) : (
-          <ul className="grid gap-4 lg:grid-cols-2">
-            {cobrancas.map((cobranca) => (
-              <li
-                key={cobranca.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                      Competência
-                    </p>
-                    <h3 className="mt-1 text-base font-semibold text-slate-900">
-                      {cobranca.competencia}
-                    </h3>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      cobranca.status === "PAGA"
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr>
+                    <th scope="col" className="px-5 py-3.5">Competência</th>
+                    <th scope="col" className="px-5 py-3.5">Valor</th>
+                    <th scope="col" className="px-5 py-3.5">Vencimento</th>
+                    <th scope="col" className="px-5 py-3.5">Pagamento</th>
+                    <th scope="col" className="px-5 py-3.5">Forma</th>
+                    <th scope="col" className="px-5 py-3.5">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {cobrancasVisiveis.map((cobranca) => {
+                    const status = statusDaCobranca(cobranca);
+                    const statusClass =
+                      status === "Paga"
                         ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
+                        : status === "Em atraso"
+                          ? "bg-rose-50 text-rose-700"
+                          : "bg-amber-50 text-amber-700";
+
+                    return (
+                      <tr key={cobranca.id} className="hover:bg-slate-50/80">
+                        <th scope="row" className="whitespace-nowrap px-5 py-3.5 font-semibold text-slate-900">
+                          {new Date(`${cobranca.competencia}-01T00:00:00.000Z`).toLocaleDateString(
+                            "pt-BR",
+                            { month: "long", year: "numeric", timeZone: "UTC" },
+                          )}
+                        </th>
+                        <td className="whitespace-nowrap px-5 py-3.5 font-medium text-slate-700">
+                          {formatarMoeda(cobranca.valor)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                          {formatarData(cobranca.vencimento)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                          {formatarData(cobranca.pagoEm)}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                          {cobranca.formaPagamento ?? "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5">
+                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
+              <p aria-live="polite" className="text-sm text-slate-600">
+                Exibindo {primeiraCobrancaVisivel}–{ultimaCobrancaVisivel} de{" "}
+                {cobrancasFiltradas.length}{" "}
+                {cobrancasFiltradas.length === 1 ? "cobrança" : "cobranças"}
+              </p>
+              {totalPaginas > 1 && (
+                <nav aria-label="Paginação do histórico de cobranças" className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaginaCobrancas((pagina) => Math.max(1, pagina - 1))}
+                    disabled={paginaAtual === 1}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {cobranca.status === "PAGA" ? "Paga" : "Pendente"}
+                    Anterior
+                  </button>
+                  <span className="text-sm text-slate-600">
+                    Página {paginaAtual} de {totalPaginas}
                   </span>
-                </div>
-                <p className="mt-4 text-2xl font-semibold tracking-tight text-slate-900">
-                  {formatarMoeda(cobranca.valor)}
-                </p>
-                <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                  <div>
-                    <dt className="text-xs font-medium text-slate-500">Vencimento</dt>
-                    <dd className="mt-1 text-sm font-medium text-slate-800">
-                      {formatarData(new Date(cobranca.vencimento))}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium text-slate-500">Pagamento</dt>
-                    <dd className="mt-1 text-sm font-medium text-slate-800">
-                      {cobranca.pagoEm
-                        ? formatarData(new Date(cobranca.pagoEm))
-                        : "-"}
-                    </dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="text-xs font-medium text-slate-500">Forma de pagamento</dt>
-                    <dd className="mt-1 text-sm font-medium text-slate-800">
-                      {cobranca.formaPagamento || "-"}
-                    </dd>
-                  </div>
-                </dl>
-              </li>
-            ))}
-          </ul>
+                  <button
+                    type="button"
+                    onClick={() => setPaginaCobrancas((pagina) => Math.min(totalPaginas, pagina + 1))}
+                    disabled={paginaAtual === totalPaginas}
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Próxima
+                  </button>
+                </nav>
+              )}
+            </div>
+          </div>
         )}
       </section>
     </div>
