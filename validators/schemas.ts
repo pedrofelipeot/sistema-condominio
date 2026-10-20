@@ -89,6 +89,22 @@ export const trocarSenhaSchema = z
     path: ["confirmarSenha"], // o erro aparece no campo de confirmação
   });
 
+  // O morador define a própria senha usando o token do convite (link de uso único)
+export const definirSenhaSchema = z
+  .object({
+    token: z
+      .string({ error: "Link de convite inválido." })
+      .trim()
+      .min(20, "Link de convite inválido.")
+      .max(200, "Link de convite inválido."),
+    novaSenha: senhaNova,
+    confirmarSenha: z.string({ error: "Confirme a nova senha." }),
+  })
+  .refine((dados) => dados.novaSenha === dados.confirmarSenha, {
+    error: "As senhas não conferem.",
+    path: ["confirmarSenha"],
+  });
+
 // Admin redefine a senha de um morador
 export const redefinirSenhaSchema = z.object({ novaSenha: senhaNova });
 
@@ -151,7 +167,6 @@ export const atualizarCasaSchema = casaSchema
 export const novoMoradorSchema = z.object({
   nome,
   email,
-  senha: senhaNova, // senha provisória
   casaId: id,
   dataEntrada: data,
 });
@@ -240,3 +255,4 @@ export type FiltrarCobrancasInput = z.infer<typeof filtrarCobrancasSchema>;
 export type FiltrarCobrancasMoradorInput = z.infer<typeof filtrarCobrancasMoradorSchema>;
 export type FiltrarMoradoresInput = z.infer<typeof filtrarMoradoresSchema>;
 export type FiltrarAvisosInput = z.infer<typeof filtrarAvisosSchema>;
+export type DefinirSenhaInput = z.infer<typeof definirSenhaSchema>;

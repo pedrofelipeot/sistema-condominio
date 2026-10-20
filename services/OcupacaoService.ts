@@ -6,6 +6,10 @@ import type { Morador } from "@/lib/types";
 import { CasaRepository } from "@/repositories/CasaRepository";
 import { OcupacaoRepository } from "@/repositories/OcupacaoRepository";
 import { UsuarioRepository } from "@/repositories/UsuarioRepository";
+import { ConviteRepository } from "@/repositories/ConviteRepository";
+import { expiracaoConvite, gerarTokenConvite, montarLinkConvite } from "@/lib/convite";
+import { hashSenhaInutilizavel } from "@/lib/senha";
+import type { NovoMoradorInput } from "@/validators/schemas";
 
 export class OcupacaoService {
   /* ------------------------------------------------------------ */
@@ -86,6 +90,8 @@ static async minhaOcupacao(solicitante: Solicitante) {
   static listarPorMorador(usuarioId: number) {
     return OcupacaoRepository.listarPorMorador(usuarioId);
   }
+
+  
 
   static async buscarMorador(usuarioId: number): Promise<Morador | undefined> {
     const ocupacao =
@@ -173,4 +179,50 @@ static async minhaOcupacao(solicitante: Solicitante) {
     }
     return casa;
   }
+
+  static async cadastrarMorador(dados: NovoMoradorInput, solicitante: Solicitante) {
+  // 1. Permissão -> 403
+  exigirAdmin(solicitante);
+
+  // 2. Preparar o que não depende do banco
+  const entrada = inicioDoDiaUTC(dados.dataEntrada);
+  const senhaHash = await hashSenhaInutilizavel();
+  const { token, tokenHash } = gerarTokenConvite();
+  const expiraEm = expiracaoConvite();
+
+  // 3. Usuário, ocupação e convite: tudo ou nada
+  const usuario = await prisma.$transaction(async (tx) => {
+    await OcupacaoService.exigirCasa(dados.casaId, tx); // 404
+
+    const existente = await UsuarioRepository.buscarPorEmail(dados.email, tx);
+    if (existente) throw new AppError("E-mail já cadastrado.", 409);
+
+    const novo = await UsuarioRepository.criar(
+      {
+        nome: dados.nome,
+        email: dados.email,
+        senhaHash,
+        perfil: "MORADOR",
+        ativo: true,
+        precisaTrocarSenha: false, // ele escolhe a própria senha
+      },
+      tx,
+    );
+
+    await OcupacaoRepository.criar(
+      { usuarioId: novo.id, casaId: dados.casaId, dataEntrada: entrada },
+      tx,
+    );
+
+    await ConviteRepository.criar({ usuarioId: novo.id, tokenHash, expiraEm }, tx);
+
+    return novo;
+  });
+
+  // 4. O link só existe aqui, na resposta: o token puro não fica guardado
+  return {
+    morador: { id: usuario.id, nome: usuario.nome, email: usuario.email },
+    convite: { link: montarLinkConvite(token), expiraEm },
+  };
+}
 }
