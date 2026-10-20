@@ -188,81 +188,82 @@ function DetalhesCasa({ id }: { id: string }) {
       </section>
 
       <section aria-labelledby="moradores-titulo">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2
-              id="moradores-titulo"
-              className="text-xl font-semibold tracking-tight text-slate-900"
-            >
-              Moradores
-            </h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Pessoas vinculadas a esta unidade e situação de ocupação.
-            </p>
-          </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-            {moradores.length} {moradores.length === 1 ? "morador" : "moradores"}
-          </span>
-        </div>
+  <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2
+        id="moradores-titulo"
+        className="text-xl font-semibold tracking-tight text-slate-900"
+      >
+        Moradores
+      </h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Pessoas vinculadas a esta unidade e situação de ocupação.
+      </p>
+    </div>
 
-        {moradores.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <h3 className="text-base font-semibold text-slate-900">
-              Nenhum morador cadastrado
-            </h3>
-            <p className="mt-2 text-sm text-slate-500">
-              Os moradores vinculados a esta casa aparecerão aqui.
-            </p>
-            <Link
-              href={`/admin/casas/${id}/cadastro-morador`}
-              className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
+    <div className="flex items-center gap-3">
+      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
+        {moradores.length} {moradores.length === 1 ? "morador" : "moradores"}
+      </span>
+      <Link
+        href={`/admin/casas/${id}/cadastro-morador`}
+        className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
+      >
+        Cadastrar morador
+      </Link>
+    </div>
+  </div>
+
+  {moradores.length === 0 ? (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+      <h3 className="text-base font-semibold text-slate-900">
+        Nenhum morador cadastrado
+      </h3>
+      <p className="mt-2 text-sm text-slate-500">
+        Os moradores vinculados a esta casa aparecerão aqui.
+      </p>
+    </div>
+  ) : (
+    <ul className="grid gap-4 lg:grid-cols-2">
+      {moradores.map((morador) => (
+        <li
+          key={morador.id}
+          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">{morador.nome}</h3>
+              <p className="mt-1 break-all text-sm text-slate-500">{morador.email}</p>
+            </div>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                morador.ativo
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-slate-100 text-slate-600"
+              }`}
             >
-              Cadastrar morador
-            </Link>
+              {morador.ativo ? "Ativo" : "Inativo"}
+            </span>
           </div>
-        ) : (
-          <ul className="grid gap-4 lg:grid-cols-2">
-            {moradores.map((morador) => (
-              <li
-                key={morador.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-base font-semibold text-slate-900">{morador.nome}</h3>
-                    <p className="mt-1 break-all text-sm text-slate-500">{morador.email}</p>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      morador.ativo
-                        ? "bg-emerald-50 text-emerald-700"
-                        : "bg-slate-100 text-slate-600"
-                    }`}
-                  >
-                    {morador.ativo ? "Ativo" : "Inativo"}
-                  </span>
-                </div>
-                <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-                  <div>
-                    <dt className="text-xs font-medium text-slate-500">Data de entrada</dt>
-                    <dd className="mt-1 text-sm font-medium text-slate-800">
-                      {formatarData(new Date(morador.dataEntrada))}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs font-medium text-slate-500">Data de saída</dt>
-                    <dd className="mt-1 text-sm font-medium text-slate-800">
-                      {morador.dataSaida
-                        ? formatarData(new Date(morador.dataSaida))
-                        : "-"}
-                    </dd>
-                  </div>
-                </dl>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Data de entrada</dt>
+              <dd className="mt-1 text-sm font-medium text-slate-800">
+                {formatarData(new Date(morador.dataEntrada))}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs font-medium text-slate-500">Data de saída</dt>
+              <dd className="mt-1 text-sm font-medium text-slate-800">
+                {morador.dataSaida ? formatarData(new Date(morador.dataSaida)) : "-"}
+              </dd>
+            </div>
+          </dl>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
 
       <section aria-labelledby="cobrancas-titulo">
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
