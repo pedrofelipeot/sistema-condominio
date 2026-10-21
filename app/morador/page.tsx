@@ -87,7 +87,13 @@ export default function MoradorPage() {
     .filter((cobranca) => cobranca.status === "PENDENTE")
     .sort((a, b) => a.vencimento.getTime() - b.vencimento.getTime());
   const proximaCobranca = cobrancasEmAberto[0];
-  const avisoMaisRecente = avisos[0];
+  const totalEmAberto = cobrancasEmAberto.reduce(
+    (total, cobranca) => total + cobranca.valor,
+    0,
+  );
+  const avisosRecentes = [...avisos]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 2);
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
@@ -115,21 +121,53 @@ export default function MoradorPage() {
       </header>
 
       <section
-        aria-label="Resumo da unidade"
+        aria-label="Resumo financeiro da unidade"
+        className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">Aluguel mensal</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+            {formatarMoeda(casa.valorAluguel)}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">valor atual da Casa {casa.numero}</p>
+        </article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-medium text-slate-500">Dia de vencimento</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+            Todo dia {casa.diaVencimento}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">vencimento mensal do aluguel</p>
+        </article>
+        <article
+          className={`rounded-2xl border p-5 shadow-sm ${
+            cobrancasEmAberto.length > 0
+              ? "border-amber-200 bg-amber-50/50"
+              : "border-emerald-200 bg-emerald-50/50"
+          }`}
+        >
+          <p className="text-sm font-medium text-slate-600">Cobranças em aberto</p>
+          <p className="mt-2 text-2xl font-semibold tracking-tight text-slate-900">
+            {formatarMoeda(totalEmAberto)}
+          </p>
+          <p className="mt-1 text-sm text-slate-600">
+            {cobrancasEmAberto.length === 0
+              ? "Nenhuma cobrança pendente"
+              : `${cobrancasEmAberto.length} ${
+                  cobrancasEmAberto.length === 1 ? "cobrança pendente" : "cobranças pendentes"
+                }`}
+          </p>
+        </article>
+      </section>
+
+      <section
+        aria-label="Próximo pagamento e avisos recentes"
         className="grid gap-4 md:grid-cols-2"
       >
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-slate-500">
-                {proximaCobranca ? "Aluguel em aberto" : "Situação do aluguel"}
-              </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                {proximaCobranca
-                  ? formatarMoeda(proximaCobranca.valor)
-                  : "Em dia"}
-              </p>
-            </div>
+        <article className="flex flex-col rounded-2xl border border-blue-200 bg-blue-50/40 p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-slate-500">
+              Situação do aluguel
+            </p>
             <span
               className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
                 proximaCobranca
@@ -144,21 +182,28 @@ export default function MoradorPage() {
                 : "Nenhuma pendência"}
             </span>
           </div>
-          {proximaCobranca ? (
-            <p className="mt-3 text-sm text-slate-500">
-              Vencimento em {formatarData(proximaCobranca.vencimento)}
+          <div className="my-auto py-4">
+            <p className="text-3xl font-semibold tracking-tight text-slate-900">
+              {proximaCobranca
+                ? formatarMoeda(proximaCobranca.valor)
+                : "Em dia"}
             </p>
-          ) : (
-            <p className="mt-3 text-sm text-slate-500">
-              Não há cobranças pendentes registradas para sua unidade.
+            {proximaCobranca ? (
+              <p className="mt-3 text-sm text-slate-500">
+                Vencimento em {formatarData(proximaCobranca.vencimento)}
+              </p>
+            ) : (
+              <p className="mt-3 text-sm text-slate-500">
+                Não há cobranças pendentes registradas para sua unidade.
+              </p>
+            )}
+            <p className="mt-1 text-xs text-slate-400">
+              Situação das cobranças da Casa {casa.numero}.
             </p>
-          )}
-          <p className="mt-1 text-xs text-slate-400">
-            Situação das cobranças da Casa {casa.numero}.
-          </p>
+          </div>
           <Link
             href="/morador/pagamentos"
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/25"
+            className="mt-5 inline-flex min-h-11 self-start items-center gap-2 rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/25"
           >
             Ver pagamentos
             <svg
@@ -178,39 +223,36 @@ export default function MoradorPage() {
           </Link>
         </article>
 
-        <article className="rounded-2xl border border-amber-200 bg-white p-5 shadow-sm sm:p-6">
+        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-800">
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-              Aviso mais recente
+              Avisos recentes
             </span>
-            {avisoMaisRecente && (
-              <time
-                dateTime={avisoMaisRecente.createdAt.toISOString()}
-                className="text-sm text-slate-500"
-              >
-                {formatarData(avisoMaisRecente.createdAt)}
-              </time>
-            )}
           </div>
-          {avisoMaisRecente ? (
-            <>
-              <h2 className="mt-4 text-lg font-semibold tracking-tight text-slate-900">
-                {avisoMaisRecente.titulo}
-              </h2>
-              <p className="mt-2 line-clamp-3 whitespace-pre-line text-sm leading-6 text-slate-600">
-                {avisoMaisRecente.texto}
-              </p>
-            </>
+          {avisosRecentes.length > 0 ? (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {avisosRecentes.map((aviso) => (
+                <li key={aviso.id} className="py-3 first:pt-0 last:pb-0">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+                    <h2 className="font-semibold text-slate-900">{aviso.titulo}</h2>
+                    <time
+                      dateTime={aviso.createdAt.toISOString()}
+                      className="text-xs text-slate-500"
+                    >
+                      {formatarData(aviso.createdAt)}
+                    </time>
+                  </div>
+                  <p className="mt-1 line-clamp-2 whitespace-pre-line text-sm leading-5 text-slate-600">
+                    {aviso.texto}
+                  </p>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <>
-              <h2 className="mt-4 text-lg font-semibold tracking-tight text-slate-900">
-                Nenhum aviso publicado
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Novos comunicados da administração aparecerão aqui.
-              </p>
-            </>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Nenhum aviso publicado. Novos comunicados da administração aparecerão aqui.
+            </p>
           )}
           <Link
             href="/morador/avisos"
@@ -235,84 +277,6 @@ export default function MoradorPage() {
         </article>
       </section>
 
-      <section aria-labelledby="atalhos-titulo">
-        <div className="mb-4">
-          <h2
-            id="atalhos-titulo"
-            className="text-lg font-semibold tracking-tight text-slate-900"
-          >
-            Acesso rápido
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Acesse as principais áreas do portal.
-          </p>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Link
-            href="/morador/pagamentos"
-            className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/15"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-colors group-hover:bg-blue-100">
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M12 2v20m5-15H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.7"
-                />
-              </svg>
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-slate-900">
-                Pagamentos
-              </span>
-              <span className="mt-1 block text-sm text-slate-500">
-                Consulte cobranças e histórico
-              </span>
-            </span>
-            <span aria-hidden="true" className="text-slate-400 transition-transform group-hover:translate-x-1">
-              →
-            </span>
-          </Link>
-
-          <Link
-            href="/morador/avisos"
-            className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-amber-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-700/15"
-          >
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700 transition-colors group-hover:bg-amber-100">
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9Zm-8 12h4"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.7"
-                />
-              </svg>
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold text-slate-900">Avisos</span>
-              <span className="mt-1 block text-sm text-slate-500">
-                Leia comunicados do condomínio
-              </span>
-            </span>
-            <span aria-hidden="true" className="text-slate-400 transition-transform group-hover:translate-x-1">
-              →
-            </span>
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }
