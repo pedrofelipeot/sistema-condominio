@@ -153,12 +153,12 @@ export default function PagamentosMorador({
   pix,
 }: Props) {
   const [cobrancaPixId, setCobrancaPixId] = useState<number | null>(null);
-  const meses = [...new Set(cobrancas.map((cobranca) => cobranca.competencia))]
+  const anos = [...new Set(cobrancas.map((cobranca) => cobranca.competencia.slice(0, 4)))]
     .sort()
     .reverse();
-  const [mesSelecionado, setMesSelecionado] = useState(meses[0] ?? "");
-  const cobrancasDoMes = cobrancas.filter(
-    (cobranca) => cobranca.competencia === mesSelecionado,
+  const [anoSelecionado, setAnoSelecionado] = useState(anos[0] ?? "");
+  const cobrancasDoAno = cobrancas.filter(
+    (cobranca) => cobranca.competencia.startsWith(`${anoSelecionado}-`),
   );
   const cobrancasEmAberto = cobrancas.filter(
     (cobranca) => cobranca.status === "PENDENTE",
@@ -317,24 +317,24 @@ export default function PagamentosMorador({
           </div>
           <div className="sm:w-64">
             <label
-              htmlFor="competencia"
+              htmlFor="ano"
               className="mb-2 block text-sm font-medium text-slate-700"
             >
-              Filtrar por mês
+              Filtrar por ano
             </label>
             <select
-              id="competencia"
-              value={mesSelecionado}
-              onChange={(event) => setMesSelecionado(event.target.value)}
-              disabled={meses.length === 0}
+              id="ano"
+              value={anoSelecionado}
+              onChange={(event) => setAnoSelecionado(event.target.value)}
+              disabled={anos.length === 0}
               className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
             >
-              {meses.length === 0 ? (
+              {anos.length === 0 ? (
                 <option value="">Sem histórico</option>
               ) : (
-                meses.map((mes) => (
-                  <option key={mes} value={mes}>
-                    {formatarCompetencia(mes)}
+                anos.map((ano) => (
+                  <option key={ano} value={ano}>
+                    {ano}
                   </option>
                 ))
               )}
@@ -351,9 +351,9 @@ export default function PagamentosMorador({
           <p className="px-6 py-12 text-center text-sm text-slate-500">
             Ainda não há cobranças registradas para esta unidade.
           </p>
-        ) : cobrancasDoMes.length === 0 ? (
+        ) : cobrancasDoAno.length === 0 ? (
           <p className="px-6 py-12 text-center text-sm text-slate-500">
-            Não há cobranças para o mês selecionado.
+            Não há cobranças para o ano selecionado.
           </p>
         ) : (
           <div className="overflow-x-auto">
@@ -369,7 +369,7 @@ export default function PagamentosMorador({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {cobrancasDoMes.map((cobranca) => {
+                {cobrancasDoAno.map((cobranca) => {
                   const status = statusDaCobranca(cobranca);
 
                   return (

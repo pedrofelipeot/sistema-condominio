@@ -3,6 +3,21 @@ import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
 import { fimDoDiaUTC } from "../lib/date";
+import { expiracaoConvite, gerarTokenConvite, montarLinkConvite } from "../lib/convite";
+import { hashSenhaInutilizavel } from "../lib/senha";
+import {
+  CASAS,
+  MORADORES,
+  emailDe,
+  estaAtivo,
+  gerarAvisos,
+  gerarCobrancas,
+  inicioDeHoje,
+} from "./seed-dados";
+
+if (process.env.NODE_ENV === "production") {
+  throw new Error("Este seed cria dados de teste: não rode em produção.");
+}
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("Defina DATABASE_URL no arquivo .env");
@@ -10,39 +25,9 @@ if (!connectionString) throw new Error("Defina DATABASE_URL no arquivo .env");
 const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
-// AJUSTE com os dados reais: [numero, quartos, valorAluguel, diaVencimento]
-// Os valores abaixo são apenas exemplos (iguais aos do mock).
-const CASAS: [number, number, number, number][] = [
-  [1, 1, 400, 5], [2, 1, 400, 5], [3, 1, 400, 5], [4, 1, 400, 5], [5, 1, 400, 5],
-  [6, 1, 400, 5], [7, 1, 400, 5], [8, 1, 400, 5], [9, 1, 400, 5], [10, 1, 400, 5],
-  [11, 2, 600, 5], [12, 2, 600, 5], [13, 2, 600, 5], [14, 2, 600, 5], [15, 2, 600, 5],
-  [16, 2, 600, 5], [17, 2, 600, 5], [18, 2, 600, 5], [19, 2, 600, 5], [20, 2, 600, 5],
-];
-
-// DADOS DE TESTE (mesmos do mock): remova quando for usar o sistema de verdade
-// [nome, email, numeroDaCasa, ativo, dataEntrada, dataSaida]
-const MORADORES_TESTE: [string, string, number, boolean, string, string | null][] = [
-  ["Maria Silva", "maria@exemplo.com", 1, true, "2025-03-01", null],
-  ["João Silva", "joao@exemplo.com", 1, true, "2025-03-01", null],
-  ["Ana Souza", "ana@exemplo.com", 2, true, "2026-02-10", null],
-  ["Carlos Lima", "carlos@exemplo.com", 2, false, "2024-06-01", "2026-01-31"],
-  ["Paulo Santos", "paulo@exemplo.com", 3, true, "2026-05-01", null],
-  ["Rita Alves", "rita@exemplo.com", 11, true, "2024-11-15", null],
-  ["Luiz Costa", "luiz@exemplo.com", 12, true, "2025-08-01", null],
-];
-
-// [numeroDaCasa, competencia, valor, vencimento, status, pagoEm, formaPagamento]
-const COBRANCAS_TESTE: [number, string, number, string, "PAGA" | "PENDENTE", string | null, "PIX" | "DINHEIRO" | null][] = [
-  [1, "2026-07", 400, "2026-07-05", "PAGA", "2026-07-04", "PIX"],
-  [1, "2026-08", 400, "2026-08-05", "PAGA", "2026-08-06", "DINHEIRO"],
-  [1, "2026-09", 400, "2026-09-05", "PAGA", "2026-09-05", "PIX"],
-  [1, "2026-10", 400, "2026-10-05", "PENDENTE", null, null],
-  [11, "2026-09", 600, "2026-09-05", "PAGA", "2026-09-03", "PIX"],
-  [11, "2026-10", 600, "2026-10-05", "PAGA", "2026-10-02", "PIX"],
-  [2, "2026-10", 400, "2026-10-05", "PAGA", "2026-10-05", "DINHEIRO"],
-  [3, "2026-10", 400, "2026-10-05", "PENDENTE", null, null],
-  [12, "2026-10", 600, "2026-10-05", "PENDENTE", null, null],
-];
+// SEED_RESET=true apaga moradores, ocupações, cobranças, convites e avisos antes de recriar.
+// Sem isso, o seed só acrescenta o que falta e não altera o que já existe.
+const RESET = process.env.SEED_RESET === "true";
 
 async function main() {
   const adminEmail = process.env.ADMIN_EMAIL;
@@ -52,19 +37,32 @@ async function main() {
     throw new Error("Defina ADMIN_EMAIL, ADMIN_PASSWORD e SEED_MORADOR_PASSWORD no .env");
   }
 
-  // 1. Casas (upsert: pode rodar várias vezes sem duplicar)
+  const hoje = inicioDeHoje();
+
+  // 0. Limpeza (opcional). A ordem respeita as chaves estrangeiras.
+  if (RESET) {
+    await prisma.convite.deleteMany();
+    await prisma.cobranca.deleteMany();
+    await prisma.ocupacao.deleteMany();
+    await prisma.aviso.deleteMany();
+    await prisma.usuario.deleteMany({ where: { perfil: "MORADOR" } });
+    console.log("Dados de teste anteriores apagados (SEED_RESET=true).");
+  }
+
+  // 1. Casas
   const casaIdPorNumero = new Map<number, number>();
   for (const [numero, quartos, valorAluguel, diaVencimento] of CASAS) {
     const casa = await prisma.casa.upsert({
       where: { numero },
-      update: {}, // não sobrescreve ajustes feitos depois pelo sistema
+      // com RESET os valores voltam ao do seed; sem RESET preserva ajustes feitos pelo sistema
+      update: RESET ? { quartos, valorAluguel, diaVencimento } : {},
       create: { numero, quartos, valorAluguel, diaVencimento },
     });
     casaIdPorNumero.set(numero, casa.id);
   }
   console.log(`${CASAS.length} casas garantidas.`);
 
-  // 2. Admin (a senha vem do .env, nunca fica escrita no código)
+  // 2. Admin (a senha vem do .env)
   const admin = await prisma.usuario.upsert({
     where: { email: adminEmail },
     update: {},
@@ -77,72 +75,107 @@ async function main() {
   });
   console.log(`Admin garantido: ${adminEmail}`);
 
-  // 3. Moradores de teste
-  const senhaHashMoradores = await bcrypt.hash(moradorPassword, 10);
-  for (const [nome, email, numeroCasa, ativo, entrada, saida] of MORADORES_TESTE) {
+  // 3. Moradores e ocupações
+  const senhaHashPadrao = await bcrypt.hash(moradorPassword, 10);
+  const usuarioIdPorNome = new Map<string, number>();
+  let totalOcupacoes = 0;
+
+  for (const m of MORADORES) {
+    const ativo = estaAtivo(m);
+    const email = emailDe(m.nome);
+
+    // Quem tem convite ainda não escolheu senha: o hash é de um valor que ninguém conhece
+    const senhaHash = m.convite ? await hashSenhaInutilizavel() : senhaHashPadrao;
+
     const usuario = await prisma.usuario.upsert({
       where: { email },
-      update: {},
+      update: { nome: m.nome, ativo },
       create: {
-        nome,
+        nome: m.nome,
         email,
-        senhaHash: senhaHashMoradores,
+        senhaHash,
         perfil: "MORADOR",
         ativo,
-        precisaTrocarSenha: true,
+        precisaTrocarSenha: !m.convite, // quem usa convite já escolhe a própria senha
       },
     });
+    usuarioIdPorNome.set(m.nome, usuario.id);
 
-    const casaId = casaIdPorNumero.get(numeroCasa)!;
-    const dataEntrada = new Date(entrada);
-    await prisma.ocupacao.upsert({
-      where: {
-        usuarioId_casaId_dataEntrada: {
-          usuarioId: usuario.id,
-          casaId,
-          dataEntrada,
+    for (const [numeroCasa, entrada, saida] of m.periodos) {
+      const casaId = casaIdPorNumero.get(numeroCasa);
+      if (!casaId) throw new Error(`Casa ${numeroCasa} não existe no seed.`);
+
+      const dataEntrada = new Date(entrada);
+      const dataSaida = saida ? fimDoDiaUTC(new Date(saida)) : null;
+
+      await prisma.ocupacao.upsert({
+        where: {
+          usuarioId_casaId_dataEntrada: { usuarioId: usuario.id, casaId, dataEntrada },
         },
-      },
-      update: { dataSaida: saida ? fimDoDiaUTC(new Date(saida)) : null },
-      create: {
-        usuarioId: usuario.id,
-        casaId,
-        dataEntrada,
-        dataSaida: saida ? fimDoDiaUTC(new Date(saida)) : null,
-      },
-    });
+        update: { dataSaida },
+        create: { usuarioId: usuario.id, casaId, dataEntrada, dataSaida },
+      });
+      totalOcupacoes += 1;
+    }
   }
-  console.log(`${MORADORES_TESTE.length} moradores de teste garantidos.`);
+  console.log(`${MORADORES.length} moradores e ${totalOcupacoes} períodos de ocupação garantidos.`);
 
-  // 4. Cobranças de teste (a regra única casa + mês impede duplicar)
-  for (const [numeroCasa, competencia, valor, vencimento, status, pagoEm, forma] of COBRANCAS_TESTE) {
-    const casaId = casaIdPorNumero.get(numeroCasa)!;
-    await prisma.cobranca.upsert({
-      where: { casaId_competencia: { casaId, competencia } },
-      update: {},
-      create: {
-        casaId,
-        competencia,
-        valor,
-        vencimento: new Date(vencimento),
-        status,
-        pagoEm: pagoEm ? new Date(pagoEm) : null,
-        formaPagamento: forma,
-      },
-    });
+  // 4. Convites (pendente e expirado)
+  const linksPendentes: string[] = [];
+  for (const m of MORADORES.filter((x) => x.convite)) {
+    const usuarioId = usuarioIdPorNome.get(m.nome)!;
+
+    // recria sempre, para não acumular convites a cada execução
+    await prisma.convite.deleteMany({ where: { usuarioId } });
+
+    const { token, tokenHash } = gerarTokenConvite();
+    const expiraEm =
+      m.convite === "pendente"
+        ? expiracaoConvite()
+        : new Date(Date.now() - 24 * 60 * 60 * 1000); // venceu ontem
+
+    await prisma.convite.create({ data: { usuarioId, tokenHash, expiraEm } });
+
+    if (m.convite === "pendente") {
+      linksPendentes.push(`${m.nome}: ${montarLinkConvite(token)}`);
+    }
   }
-  console.log(`${COBRANCAS_TESTE.length} cobranças de teste garantidas.`);
 
-  // 5. Avisos de teste (só cria se a tabela estiver vazia, para não duplicar)
+  // 5. Cobranças (calculadas a partir das ocupações)
+  const cobrancas = gerarCobrancas(hoje);
+  await prisma.cobranca.createMany({
+    data: cobrancas.map((c) => ({
+      casaId: casaIdPorNumero.get(c.casaNumero)!,
+      competencia: c.competencia,
+      valor: c.valor,
+      vencimento: c.vencimento,
+      status: c.status,
+      pagoEm: c.pagoEm,
+      formaPagamento: c.formaPagamento,
+    })),
+    skipDuplicates: true, // casa + competência é único
+  });
+
+  const pendentes = cobrancas.filter((c) => c.status === "PENDENTE");
+  const atrasadas = pendentes.filter((c) => c.vencimento < hoje);
+  console.log(
+    `${cobrancas.length} cobranças: ${cobrancas.length - pendentes.length} pagas, ` +
+      `${pendentes.length} pendentes (${atrasadas.length} atrasadas).`,
+  );
+
+  // 6. Avisos (só cria se a tabela estiver vazia)
   if ((await prisma.aviso.count()) === 0) {
+    const avisos = gerarAvisos(hoje);
     await prisma.aviso.createMany({
-      data: [
-        { titulo: "Portão", texto: "Por favor, não batam o portão ao entrar ou sair, principalmente à noite.", autorId: admin.id, createdAt: new Date("2026-10-08") },
-        { titulo: "Limpeza da área comum", texto: "A limpeza será no sábado pela manhã. Evitem deixar objetos no corredor.", autorId: admin.id, createdAt: new Date("2026-10-03") },
-        { titulo: "Vencimento do aluguel", texto: "O aluguel vence todo dia 5. Pagamentos por Pix ou em dinheiro com a administração.", autorId: admin.id, createdAt: new Date("2026-09-20") },
-      ],
+      data: avisos.map((a) => ({ ...a, autorId: admin.id })),
     });
-    console.log("3 avisos de teste criados.");
+    console.log(`${avisos.length} avisos criados.`);
+  }
+
+  // 7. Resumo para os testes
+  if (linksPendentes.length > 0) {
+    console.log("\nLinks de convite pendentes (válidos por 48h):");
+    for (const link of linksPendentes) console.log(`  ${link}`);
   }
 }
 

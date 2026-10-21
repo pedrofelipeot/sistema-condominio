@@ -11,9 +11,25 @@ import {
 } from "@/lib/conversores";
 import type { Casa, Cobranca } from "@/lib/types";
 
+const MESES = [
+  ["01", "Janeiro"],
+  ["02", "Fevereiro"],
+  ["03", "Março"],
+  ["04", "Abril"],
+  ["05", "Maio"],
+  ["06", "Junho"],
+  ["07", "Julho"],
+  ["08", "Agosto"],
+  ["09", "Setembro"],
+  ["10", "Outubro"],
+  ["11", "Novembro"],
+  ["12", "Dezembro"],
+] as const;
+
 export default function AdminPage() {
   const [casas, setCasas] = useState<Casa[]>([]);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [ano, setAno] = useState("");
   const [mes, setMes] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -38,7 +54,9 @@ export default function AdminPage() {
         ]
           .sort()
           .reverse();
-        setMes(disponiveis[0] ?? "");
+        const competenciaMaisRecente = disponiveis[0] ?? "";
+        setAno(competenciaMaisRecente.slice(0, 4));
+        setMes(competenciaMaisRecente.slice(5, 7));
       })
       .catch((e) => {
         if (cancelado) return;
@@ -53,11 +71,13 @@ export default function AdminPage() {
     };
   }, []);
 
-  const meses = [...new Set(cobrancas.map((c) => c.competencia))]
+  const anos = [...new Set(cobrancas.map((c) => c.competencia.slice(0, 4)))]
     .sort()
     .reverse();
 
-  const cobrancasDoMes = cobrancas.filter((c) => c.competencia === mes);
+  const cobrancasDoMes = cobrancas.filter(
+    (c) => c.competencia === `${ano}-${mes}`,
+  );
 
   return (
     <div className="space-y-8">
@@ -100,34 +120,43 @@ export default function AdminPage() {
             Escolha uma competência para consultar as cobranças.
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:w-64">
-          <label
-            htmlFor="mes"
-            className="mb-2 block text-sm font-medium text-slate-700"
-          >
-            Competência
+        <div className="mt-4 grid gap-3 sm:mt-0 sm:grid-cols-2">
+          <label className="text-sm font-medium text-slate-700">
+            Ano
+            <select
+              value={ano}
+              onChange={(event) => setAno(event.target.value)}
+              disabled={carregando || anos.length === 0}
+              className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+            >
+              {anos.length === 0 ? (
+                <option value="">
+                  {carregando ? "Carregando anos..." : "Sem anos"}
+                </option>
+              ) : (
+                anos.map((opcaoAno) => (
+                  <option key={opcaoAno} value={opcaoAno}>
+                    {opcaoAno}
+                  </option>
+                ))
+              )}
+            </select>
           </label>
-          <select
-            id="mes"
-            value={mes}
-            onChange={(e) => setMes(e.target.value)}
-            disabled={carregando || meses.length === 0}
-            className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
-          >
-            {meses.length === 0 && (
-              <option value="">
-                {carregando ? "Carregando competências..." : "Sem competências"}
-              </option>
-            )}
-            {meses.map((competencia) => (
-              <option key={competencia} value={competencia}>
-                {new Date(`${competencia}-01T00:00:00.000Z`).toLocaleDateString(
-                  "pt-BR",
-                  { month: "long", year: "numeric", timeZone: "UTC" },
-                )}
-              </option>
-            ))}
-          </select>
+          <label className="text-sm font-medium text-slate-700">
+            Mês
+            <select
+              value={mes}
+              onChange={(event) => setMes(event.target.value)}
+              disabled={carregando || anos.length === 0}
+              className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+            >
+              {MESES.map(([numero, nome]) => (
+                <option key={numero} value={numero}>
+                  {nome}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </section>
 

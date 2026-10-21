@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import PagamentosMorador from "@/app/components/PagamentosMorador";
 import { api, ErroApi } from "@/lib/api-cliente";
 import {
@@ -77,6 +78,13 @@ export default function PagamentosPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <Link
+        href="/morador"
+        className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+      >
+        <span aria-hidden="true">←</span>
+        Voltar ao início
+      </Link>
       <PagamentosMorador
         morador={morador}
         casa={casa}

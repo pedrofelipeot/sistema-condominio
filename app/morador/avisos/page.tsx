@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { api, ErroApi } from "@/lib/api-cliente";
 import { formatarData } from "@/lib/format";
 import type { Aviso } from "@/lib/types";
@@ -43,6 +44,13 @@ export default function AvisosPage() {
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-8 px-5 py-8 sm:px-8 sm:py-10">
+      <Link
+        href="/morador"
+        className="inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+      >
+        <span aria-hidden="true">←</span>
+        Voltar ao início
+      </Link>
       <header className="relative overflow-hidden rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 via-white to-slate-50 px-7 py-9 sm:px-10 sm:py-11">
         <div
           aria-hidden="true"
