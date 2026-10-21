@@ -16,6 +16,7 @@ import { formatarData, formatarMoeda } from "@/lib/format";
 import { statusDaCobranca } from "@/lib/status";
 import Link from "next/link";
 import type { Casa, Cobranca } from "@/lib/types";
+import RegistrarPagamentoModal from "@/app/components/admin/RegistrarPagamentoModal";
 
 const COBRANCAS_POR_PAGINA = 12;
 type FiltroStatusCobranca = "Todas" | "Paga" | "Pendente" | "Em atraso";
@@ -36,6 +37,7 @@ function DetalhesCasa({ id }: { id: string }) {
   const [anoFiltro, setAnoFiltro] = useState("todos");
   const [statusFiltro, setStatusFiltro] = useState<FiltroStatusCobranca>("Todas");
   const [paginaCobrancas, setPaginaCobrancas] = useState(1);
+  const [cobrancaParaPagar, setCobrancaParaPagar] = useState<Cobranca | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -439,7 +441,7 @@ function DetalhesCasa({ id }: { id: string }) {
         ) : (
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-sm">
+              <table className="w-full min-w-[920px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   <tr>
                     <th scope="col" className="px-5 py-3.5">Competência</th>
@@ -448,6 +450,7 @@ function DetalhesCasa({ id }: { id: string }) {
                     <th scope="col" className="px-5 py-3.5">Pagamento</th>
                     <th scope="col" className="px-5 py-3.5">Forma</th>
                     <th scope="col" className="px-5 py-3.5">Status</th>
+                    <th scope="col" className="px-5 py-3.5">Ação</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -484,6 +487,19 @@ function DetalhesCasa({ id }: { id: string }) {
                           <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
                             {status}
                           </span>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3.5">
+                          {cobranca.status !== "PAGA" ? (
+                            <button
+                              type="button"
+                              onClick={() => setCobrancaParaPagar(cobranca)}
+                              className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                            >
+                              Registrar Pagamento
+                            </button>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
                         </td>
                       </tr>
                     );
@@ -524,6 +540,22 @@ function DetalhesCasa({ id }: { id: string }) {
           </div>
         )}
       </section>
+      {cobrancaParaPagar && (
+        <RegistrarPagamentoModal
+          cobrancaId={cobrancaParaPagar.id}
+          competencia={cobrancaParaPagar.competencia}
+          onClose={() => setCobrancaParaPagar(null)}
+          onSuccess={(cobrancaAtualizada) => {
+            const convertida = converterCobranca(cobrancaAtualizada);
+            setCobrancas((atuais) =>
+              atuais.map((item) =>
+                item.id === convertida.id ? convertida : item,
+              ),
+            );
+            setCobrancaParaPagar(null);
+          }}
+        />
+      )}
     </div>
   );
 }
