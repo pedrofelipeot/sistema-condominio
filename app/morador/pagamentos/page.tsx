@@ -10,12 +10,14 @@ import {
   type CobrancaApi,
   type MinhaCasaApi,
 } from "@/lib/conversores";
+import type { ConfiguracaoPixApi } from "@/lib/pix";
 import type { Casa, Cobranca, Morador } from "@/lib/types";
 
 export default function PagamentosPage() {
   const [morador, setMorador] = useState<Morador | null>(null);
   const [casa, setCasa] = useState<Casa | null>(null);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
+  const [pix, setPix] = useState<ConfiguracaoPixApi | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -25,12 +27,14 @@ export default function PagamentosPage() {
     Promise.all([
       api<MinhaCasaApi>("/api/morador/minha-casa"),
       api<CobrancaApi[]>("/api/morador/cobrancas"),
+      api<ConfiguracaoPixApi>("/api/morador/pix"),
     ])
-      .then(([minhaCasa, cobrancasApi]) => {
+      .then(([minhaCasa, cobrancasApi, configuracaoPix]) => {
         if (cancelado) return;
         setMorador(converterMorador(minhaCasa));
         setCasa(converterCasa(minhaCasa.casa));
         setCobrancas(cobrancasApi.map(converterCobranca));
+        setPix(configuracaoPix);
       })
       .catch((e: unknown) => {
         if (cancelado) return;
@@ -58,7 +62,7 @@ export default function PagamentosPage() {
     );
   }
 
-  if (erro || !morador || !casa) {
+  if (erro || !morador || !casa || !pix) {
     return (
       <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
         <div
@@ -73,7 +77,12 @@ export default function PagamentosPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
-      <PagamentosMorador morador={morador} casa={casa} cobrancas={cobrancas} />
+      <PagamentosMorador
+        morador={morador}
+        casa={casa}
+        cobrancas={cobrancas}
+        pix={pix}
+      />
     </div>
   );
 }

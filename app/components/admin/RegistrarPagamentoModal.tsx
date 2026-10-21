@@ -18,6 +18,9 @@ export default function RegistrarPagamentoModal({
   onSuccess,
 }: Props) {
   const [dataPagamento, setDataPagamento] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState<"PIX" | "DINHEIRO">(
+    "DINHEIRO",
+  );
   const [erro, setErro] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -45,7 +48,7 @@ export default function RegistrarPagamentoModal({
           method: "PATCH",
           body: JSON.stringify({
             pagoEm: dataPagamento,
-            formaPagamento: "DINHEIRO",
+            formaPagamento,
           }),
         },
       );
@@ -78,7 +81,8 @@ export default function RegistrarPagamentoModal({
               Registrar pagamento
             </h2>
             <p className="mt-1 text-sm text-slate-600">
-              Competência {competencia} · pagamento em dinheiro
+              Competência {competencia} · pagamento via{" "}
+              {formaPagamento === "PIX" ? "Pix" : "dinheiro"}
             </p>
           </div>
           <button
@@ -93,6 +97,27 @@ export default function RegistrarPagamentoModal({
         </div>
 
         <form className="mt-6 space-y-5" onSubmit={registrarPagamento}>
+          <div>
+            <label
+              htmlFor="forma-pagamento"
+              className="block text-sm font-medium text-slate-700"
+            >
+              Forma de pagamento
+            </label>
+            <select
+              id="forma-pagamento"
+              value={formaPagamento}
+              onChange={(event) =>
+                setFormaPagamento(
+                  event.target.value === "PIX" ? "PIX" : "DINHEIRO",
+                )
+              }
+              className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+            >
+              <option value="PIX">Pix</option>
+              <option value="DINHEIRO">Dinheiro</option>
+            </select>
+          </div>
           <div>
             <label
               htmlFor="data-pagamento"

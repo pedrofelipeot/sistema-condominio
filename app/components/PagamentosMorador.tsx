@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+import QRCode from "qrcode";
 import { formatarData, formatarMoeda } from "@/lib/format";
+import { construirPixCopiaECola, type ConfiguracaoPixApi } from "@/lib/pix";
 import { statusDaCobranca } from "@/lib/status";
 import type { Casa, Cobranca, Morador } from "@/lib/types";
 
@@ -9,7 +12,121 @@ type Props = {
   morador: Morador;
   casa: Casa;
   cobrancas: Cobranca[];
+  pix: ConfiguracaoPixApi;
 };
+
+type PixCobrancaProps = {
+  pix: Extract<ConfiguracaoPixApi, { configurado: true }>;
+  cobranca: Cobranca;
+};
+
+function PixCobranca({ pix, cobranca }: PixCobrancaProps) {
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [erroQr, setErroQr] = useState<string | null>(null);
+  const [erroCopiar, setErroCopiar] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  let payload: string | null = null;
+  let erroPayload: string | null = null;
+
+  try {
+    payload = construirPixCopiaECola({
+      chave: pix.chave,
+      nomeRecebedor: pix.nomeRecebedor,
+      cidade: pix.cidade,
+      valor: cobranca.valor,
+      referencia: `C${cobranca.id}M${cobranca.competencia.replace("-", "")}`,
+    });
+  } catch (error) {
+    erroPayload =
+      error instanceof Error
+        ? error.message
+        : "Não foi possível preparar o pagamento Pix.";
+  }
+
+  useEffect(() => {
+    if (!payload) return;
+
+    let cancelado = false;
+    QRCode.toDataURL(payload, {
+      errorCorrectionLevel: "M",
+      margin: 2,
+      width: 240,
+    })
+      .then((dataUrl) => {
+        if (!cancelado) setQrCode(dataUrl);
+      })
+      .catch(() => {
+        if (!cancelado) {
+          setErroQr("Não foi possível gerar o QR Code desta cobrança.");
+        }
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, [payload]);
+
+  async function copiarPix() {
+    if (!payload) return;
+
+    try {
+      await navigator.clipboard.writeText(payload);
+      setCopiado(true);
+      setErroCopiar(null);
+    } catch {
+      setErroCopiar(
+        "Não foi possível copiar automaticamente. Selecione e copie o código Pix.",
+      );
+    }
+  }
+
+  return (
+    <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-emerald-100 bg-white p-4">
+      {qrCode ? (
+        <Image
+          src={qrCode}
+          alt={`QR Code Pix de ${formatarMoeda(cobranca.valor)} para ${formatarCompetencia(cobranca.competencia)}`}
+          width={240}
+          height={240}
+          unoptimized
+        />
+      ) : erroPayload || erroQr ? (
+        <p role="alert" className="text-sm text-rose-700">
+          {erroPayload ?? erroQr}
+        </p>
+      ) : (
+        <p role="status" className="text-sm text-slate-500">
+          Gerando QR Code...
+        </p>
+      )}
+      {erroCopiar && (
+        <p role="alert" className="text-sm text-rose-700">
+          {erroCopiar}
+        </p>
+      )}
+      {payload && (
+        <>
+          <button
+            type="button"
+            onClick={() => void copiarPix()}
+            className="min-h-10 rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/15"
+          >
+            {copiado ? "Pix copiado" : "Copiar código Pix"}
+          </button>
+          <label className="w-full text-xs font-medium text-slate-600">
+            Pix copia e cola
+            <textarea
+              readOnly
+              value={payload}
+              rows={3}
+              className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-2 font-mono text-xs text-slate-700"
+            />
+          </label>
+        </>
+      )}
+    </div>
+  );
+}
 
 function formatarCompetencia(competencia: string) {
   const [ano, mes] = competencia.split("-");
@@ -33,7 +150,9 @@ export default function PagamentosMorador({
   morador,
   casa,
   cobrancas,
+  pix,
 }: Props) {
+  const [cobrancaPixId, setCobrancaPixId] = useState<number | null>(null);
   const meses = [...new Set(cobrancas.map((cobranca) => cobranca.competencia))]
     .sort()
     .reverse();
@@ -47,6 +166,9 @@ export default function PagamentosMorador({
   const proximaCobranca = [...cobrancasEmAberto].sort(
     (a, b) => a.vencimento.getTime() - b.vencimento.getTime(),
   )[0];
+  const cobrancaPix =
+    cobrancasEmAberto.find((cobranca) => cobranca.id === cobrancaPixId) ??
+    proximaCobranca;
   const totalEmAberto = cobrancasEmAberto.reduce(
     (total, cobranca) => total + cobranca.valor,
     0,
@@ -85,7 +207,7 @@ export default function PagamentosMorador({
         aria-label="Resumo da situação financeira"
         className="grid gap-4 md:grid-cols-2"
       >
-        <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <article className="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-slate-500">
@@ -116,37 +238,64 @@ export default function PagamentosMorador({
         </article>
 
         <article className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-start gap-4">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800">
-              <svg
-                aria-hidden="true"
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M12 2v20m5-15H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="1.7"
+          <h2 className="font-semibold tracking-tight text-slate-900">
+            Pagamento via Pix
+          </h2>
+          {!pix.configurado ? (
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              O Pix ainda não foi configurado. Solicite à administração que
+              cadastre a chave e os dados do recebedor.
+            </p>
+          ) : !cobrancaPix ? (
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Não há cobranças pendentes para pagar via Pix.
+            </p>
+          ) : (
+            <>
+              {cobrancasEmAberto.length > 1 && (
+                <label className="mt-3 block text-sm font-medium text-slate-700">
+                  Cobrança
+                  <select
+                    value={cobrancaPix.id}
+                    onChange={(event) =>
+                      setCobrancaPixId(Number(event.target.value))
+                    }
+                    className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/15"
+                  >
+                    {[...cobrancasEmAberto]
+                      .sort(
+                        (a, b) =>
+                          a.vencimento.getTime() - b.vencimento.getTime(),
+                      )
+                      .map((cobranca) => (
+                        <option key={cobranca.id} value={cobranca.id}>
+                          {formatarCompetencia(cobranca.competencia)} ·{" "}
+                          {formatarMoeda(cobranca.valor)}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              )}
+              <p className="mt-3 text-sm text-slate-600">
+                {formatarCompetencia(cobrancaPix.competencia)} ·{" "}
+                {formatarMoeda(cobrancaPix.valor)} · vence em{" "}
+                {formatarData(cobrancaPix.vencimento)}
+              </p>
+              {pix.configurado && (
+                <PixCobranca
+                  key={cobrancaPix.id}
+                  pix={pix}
+                  cobranca={cobrancaPix}
                 />
-              </svg>
-            </span>
-            <div>
-              <h2 className="font-semibold tracking-tight text-slate-900">
-                Pagamento via Pix
-              </h2>
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                Para pagar via Pix, solicite a chave diretamente à
-                administração. Confira a competência e informe a Casa{" "}
-                {casa.numero} ao realizar o pagamento.
+              )}
+              <p className="mt-3 text-xs leading-5 text-slate-600">
+                Confira o nome do recebedor e o valor antes de confirmar no
+                aplicativo do banco. O QR Code não confirma o pagamento; a
+                cobrança só será atualizada após a conferência manual pela
+                administração.
               </p>
-              <p className="mt-3 text-xs leading-5 text-slate-500">
-                A chave Pix e o QR Code ainda não estão disponíveis nesta área.
-              </p>
-            </div>
-          </div>
+            </>
+          )}
         </article>
       </section>
 
