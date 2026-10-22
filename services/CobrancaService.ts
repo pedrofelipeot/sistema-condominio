@@ -50,8 +50,16 @@ export class CobrancaService {
     // 1. Permissão -> 403
     exigirAdmin(solicitante);
 
+    return CobrancaService.gerarParaCompetencia(dados.competencia);
+  }
+
+  static async gerarCobrancasAgendadas(dados: GerarCobrancasInput) {
+    return CobrancaService.gerarParaCompetencia(dados.competencia);
+  }
+
+  private static async gerarParaCompetencia(competencia: string) {
     // 2. Montar o vencimento de cada casa a partir de "AAAA-MM"
-    const [ano, mes] = dados.competencia.split("-").map(Number);
+    const [ano, mes] = competencia.split("-").map(Number);
 
     const casas = await CasaRepository.listar();
     if (casas.length === 0) {
@@ -63,15 +71,16 @@ export class CobrancaService {
       const cobrancas = [];
 
       for (const casa of casas) {
+        const ultimoDiaDoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
         const vencimento = new Date(
-          Date.UTC(ano, mes - 1, casa.diaVencimento),
+          Date.UTC(ano, mes - 1, Math.min(casa.diaVencimento, ultimoDiaDoMes)),
         );
 
         // criarSeNaoExistir evita duplicar (casa + competência é único)
         const cobranca = await CobrancaRepository.criarSeNaoExistir(
           {
             casaId: casa.id,
-            competencia: dados.competencia,
+            competencia,
             valor: casa.valorAluguel,
             vencimento,
             status: "PENDENTE", // use o valor real do seu enum
