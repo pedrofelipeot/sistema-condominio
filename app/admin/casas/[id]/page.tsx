@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { api, ErroApi } from "@/lib/api-cliente";
 import {
@@ -22,6 +22,23 @@ const COBRANCAS_POR_PAGINA = 12;
 type FiltroStatusCobranca = "Todas" | "Paga" | "Pendente" | "Em atraso";
 
 export default function CasaIdPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          role="status"
+          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        >
+          Carregando os dados da casa...
+        </div>
+      }
+    >
+      <DetalhesCasaPage />
+    </Suspense>
+  );
+}
+
+function DetalhesCasaPage() {
   const { id } = useParams<{ id: string }>();
   return <DetalhesCasa key={id} id={id} />;
 }
