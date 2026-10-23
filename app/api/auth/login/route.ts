@@ -8,7 +8,7 @@ export async function POST(req: Request) {
   try {
     const dados = loginSchema.parse(await req.json());
     const usuario = await AuthService.login(dados);
-    await criarSessao(usuario.id);
+    await criarSessao(usuario.id, usuario.perfil);
 
     return NextResponse.json(usuario);
   } catch (error) {

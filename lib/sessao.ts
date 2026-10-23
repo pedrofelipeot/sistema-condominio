@@ -13,8 +13,8 @@ if (!process.env.SESSION_SECRET) {
 }
 const segredo = new TextEncoder().encode(process.env.SESSION_SECRET);
 
-export async function criarSessao(usuarioId: number) {
-  const token = await new SignJWT({})
+export async function criarSessao(usuarioId: number, perfil: string) {
+  const token = await new SignJWT({ perfil })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(String(usuarioId))
     .setIssuedAt()

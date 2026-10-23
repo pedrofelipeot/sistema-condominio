@@ -7,6 +7,10 @@ import { formatarData, formatarMoeda } from "@/lib/format";
 import { construirPixCopiaECola, type ConfiguracaoPixApi } from "@/lib/pix";
 import { statusDaCobranca } from "@/lib/status";
 import type { Casa, Cobranca, Morador } from "@/lib/types";
+import PageHeader from "@/app/components/PageHeader";
+import { acaoSecundaria } from "@/app/components/estilosAcoes";
+import StatusBadge from "@/app/components/StatusBadge";
+import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario";
 
 type Props = {
   morador: Morador;
@@ -81,7 +85,7 @@ function PixCobranca({ pix, cobranca }: PixCobrancaProps) {
   }
 
   return (
-    <div className="mt-4 flex flex-col items-center gap-3 rounded-xl border border-emerald-100 bg-white p-4">
+    <div className="mt-4 flex flex-col items-center gap-3 rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm">
       {qrCode ? (
         <Image
           src={qrCode}
@@ -91,16 +95,16 @@ function PixCobranca({ pix, cobranca }: PixCobrancaProps) {
           unoptimized
         />
       ) : erroPayload || erroQr ? (
-        <p role="alert" className="text-sm text-rose-700">
+        <p role="alert" className="text-sm text-[var(--morador-danger)]">
           {erroPayload ?? erroQr}
         </p>
       ) : (
-        <p role="status" className="text-sm text-slate-500">
+        <p role="status" className="text-sm text-[var(--morador-text-secondary)]">
           Gerando QR Code...
         </p>
       )}
       {erroCopiar && (
-        <p role="alert" className="text-sm text-rose-700">
+        <p role="alert" className="text-sm text-[var(--morador-danger)]">
           {erroCopiar}
         </p>
       )}
@@ -109,17 +113,17 @@ function PixCobranca({ pix, cobranca }: PixCobrancaProps) {
           <button
             type="button"
             onClick={() => void copiarPix()}
-            className="min-h-10 rounded-lg border border-emerald-200 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/15"
+            className={acaoSecundaria}
           >
             {copiado ? "Pix copiado" : "Copiar código Pix"}
           </button>
-          <label className="w-full text-xs font-medium text-slate-600">
+          <label className={`${rotuloCampo} w-full`}>
             Pix copia e cola
             <textarea
               readOnly
               value={payload}
               rows={3}
-              className="mt-1 w-full resize-y rounded-lg border border-slate-300 bg-slate-50 p-2 font-mono text-xs text-slate-700"
+              className={`${campoFormulario} mt-1 resize-y font-mono`}
             />
           </label>
         </>
@@ -139,11 +143,11 @@ function formatarCompetencia(competencia: string) {
   });
 }
 
-function classeStatus(status: string) {
-  if (status === "Paga") return "bg-emerald-50 text-emerald-700";
-  if (status === "Em atraso") return "bg-rose-50 text-rose-700";
-  if (status === "Pendente") return "bg-amber-50 text-amber-800";
-  return "bg-slate-100 text-slate-600";
+function tomStatus(status: string) {
+  if (status === "Paga" || status === "Em dia") return "success" as const;
+  if (status === "Em atraso") return "danger" as const;
+  if (status === "Pendente") return "warning" as const;
+  return "neutral" as const;
 }
 
 export default function PagamentosMorador({
@@ -178,89 +182,89 @@ export default function PagamentosMorador({
     : "Em dia";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <header className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-9 text-white shadow-xl shadow-slate-900/10 sm:px-10 sm:py-11">
-        <div
-          aria-hidden="true"
-          className="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.04]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-28 right-28 h-56 w-56 rounded-full bg-emerald-400/10 blur-2xl"
-        />
-        <div className="relative max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            Área financeira
-          </span>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Pagamentos
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-            Olá, {morador.nome}. Consulte a situação do aluguel e o histórico
-            de cobranças da sua unidade.
-          </p>
-        </div>
-      </header>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <PageHeader
+        eyebrow="Área do morador"
+        title="Pagamentos"
+        description={`Olá, ${morador.nome}. Consulte suas cobranças e pagamentos registrados.`}
+        badge={`Casa ${casa.numero}`}
+      />
 
       <section
         aria-label="Resumo da situação financeira"
-        className="grid gap-4 md:grid-cols-2"
+        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm"
       >
-        <article className="self-start rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="grid divide-y divide-[var(--morador-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          <div className="flex items-center justify-between gap-4 py-4 sm:pr-6">
             <div>
-              <p className="text-sm font-medium text-slate-500">
-                {proximaCobranca ? "Valor em aberto" : "Situação atual"}
+              <p className="text-xs font-semibold uppercase tracking-wide text-[var(--morador-text-secondary)]">
+                Total em aberto
               </p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-                {proximaCobranca ? formatarMoeda(totalEmAberto) : statusAtual}
+              <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums text-[var(--morador-text-primary)]">
+                {formatarMoeda(totalEmAberto)}
               </p>
             </div>
-            <span
-              className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${classeStatus(statusAtual)}`}
-            >
+            <StatusBadge tone={tomStatus(statusAtual)}>
               {statusAtual}
-            </span>
+            </StatusBadge>
           </div>
-          {proximaCobranca ? (
-            <p className="mt-3 text-sm text-slate-500">
-              {cobrancasEmAberto.length === 1
-                ? "Cobrança com vencimento em "
-                : `${cobrancasEmAberto.length} cobranças em aberto · vencimento mais próximo em `}
-              {formatarData(proximaCobranca.vencimento)}
+          <div className="py-4 sm:pl-6">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--morador-text-secondary)]">
+              Próximo vencimento
             </p>
-          ) : (
-            <p className="mt-3 text-sm text-slate-500">
-              Não há cobranças pendentes registradas para esta unidade.
+            <p
+              className={`mt-1 text-xl font-semibold tracking-tight ${
+                proximaCobranca && statusAtual === "Em atraso"
+                  ? "text-[var(--morador-danger)]"
+                  : proximaCobranca
+                    ? "text-[var(--morador-warning)]"
+                    : "text-[var(--morador-text-primary)]"
+              }`}
+            >
+              {proximaCobranca
+                ? formatarData(proximaCobranca.vencimento)
+                : "Nenhum pendente"}
             </p>
-          )}
-        </article>
+            <p className="mt-1 text-base text-[var(--morador-text-secondary)]">
+              {cobrancasEmAberto.length === 0
+                ? "Nenhuma cobrança pendente"
+                : `${cobrancasEmAberto.length} ${
+                    cobrancasEmAberto.length === 1
+                      ? "cobrança pendente"
+                      : "cobranças pendentes"
+                  }`}
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <article className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm sm:p-6">
-          <h2 className="font-semibold tracking-tight text-slate-900">
+      <section
+        aria-labelledby="pagamento-pix-titulo"
+        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm"
+      >
+          <h2 id="pagamento-pix-titulo" className="font-semibold tracking-tight text-[var(--morador-text-primary)]">
             Pagamento via Pix
           </h2>
           {!pix.configurado ? (
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-[var(--morador-text-secondary)]">
               O Pix ainda não foi configurado. Solicite à administração que
               cadastre a chave e os dados do recebedor.
             </p>
           ) : !cobrancaPix ? (
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-[var(--morador-text-secondary)]">
               Não há cobranças pendentes para pagar via Pix.
             </p>
           ) : (
             <>
               {cobrancasEmAberto.length > 1 && (
-                <label className="mt-3 block text-sm font-medium text-slate-700">
+                <label className={`${rotuloCampo} mt-3`}>
                   Cobrança
                   <select
                     value={cobrancaPix.id}
                     onChange={(event) =>
                       setCobrancaPixId(Number(event.target.value))
                     }
-                    className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-600/15"
+                    className={`${campoFormulario} mt-1`}
                   >
                     {[...cobrancasEmAberto]
                       .sort(
@@ -276,7 +280,7 @@ export default function PagamentosMorador({
                   </select>
                 </label>
               )}
-              <p className="mt-3 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-[var(--morador-text-secondary)]">
                 {formatarCompetencia(cobrancaPix.competencia)} ·{" "}
                 {formatarMoeda(cobrancaPix.valor)} · vence em{" "}
                 {formatarData(cobrancaPix.vencimento)}
@@ -288,7 +292,7 @@ export default function PagamentosMorador({
                   cobranca={cobrancaPix}
                 />
               )}
-              <p className="mt-3 text-xs leading-5 text-slate-600">
+              <p className="mt-3 text-xs leading-5 text-[var(--morador-text-secondary)]">
                 Confira o nome do recebedor e o valor antes de confirmar no
                 aplicativo do banco. O QR Code não confirma o pagamento; a
                 cobrança só será atualizada após a conferência manual pela
@@ -296,29 +300,28 @@ export default function PagamentosMorador({
               </p>
             </>
           )}
-        </article>
       </section>
 
       <section
         aria-labelledby="historico-pagamentos-titulo"
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        className="overflow-hidden rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)]"
       >
-        <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+        <div className="flex flex-col gap-4 border-b border-[var(--morador-border)] px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
           <div>
             <h2
               id="historico-pagamentos-titulo"
-              className="text-lg font-semibold tracking-tight text-slate-900"
+              className="text-lg font-semibold tracking-tight text-[var(--morador-text-primary)]"
             >
               Histórico de pagamentos
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-base text-[var(--morador-text-secondary)]">
               Consulte cobranças, vencimentos e pagamentos registrados.
             </p>
           </div>
           <div className="sm:w-64">
             <label
               htmlFor="ano"
-              className="mb-2 block text-sm font-medium text-slate-700"
+              className={rotuloCampo}
             >
               Filtrar por ano
             </label>
@@ -327,7 +330,7 @@ export default function PagamentosMorador({
               value={anoSelecionado}
               onChange={(event) => setAnoSelecionado(event.target.value)}
               disabled={anos.length === 0}
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-800 transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500"
+              className={campoFormulario}
             >
               {anos.length === 0 ? (
                 <option value="">Sem histórico</option>
@@ -342,73 +345,68 @@ export default function PagamentosMorador({
           </div>
         </div>
 
-        <div className="border-b border-slate-100 bg-blue-50/60 px-5 py-3.5 text-sm leading-6 text-blue-900 sm:px-6">
-          As cobranças são vinculadas à unidade. O histórico abaixo corresponde
-          à Casa {casa.numero}.
-        </div>
-
-        {cobrancas.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-500">
-            Ainda não há cobranças registradas para esta unidade.
-          </p>
-        ) : cobrancasDoAno.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-500">
-            Não há cobranças para o ano selecionado.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="overflow-x-auto">
+            <table className="w-full min-w-[680px] text-left text-base">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <tr>
-                  <th scope="col" className="px-6 py-3.5">Competência</th>
-                  <th scope="col" className="px-6 py-3.5">Valor</th>
-                  <th scope="col" className="px-6 py-3.5">Vencimento</th>
-                  <th scope="col" className="px-6 py-3.5">Pagamento</th>
-                  <th scope="col" className="px-6 py-3.5">Forma</th>
-                  <th scope="col" className="px-6 py-3.5">Status</th>
+                  <th scope="col" className="px-4 py-3 text-left">Competência</th>
+                  <th scope="col" className="px-4 py-3 text-left">Valor</th>
+                  <th scope="col" className="px-4 py-3 text-left">Vencimento</th>
+                  <th scope="col" className="px-4 py-3 text-left">Pagamento</th>
+                  <th scope="col" className="px-4 py-3 text-left">Forma</th>
+                  <th scope="col" className="px-4 py-3 text-left">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
+                {cobrancas.length === 0 || cobrancasDoAno.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-12 text-center text-slate-600"
+                    >
+                      {cobrancas.length === 0
+                        ? "Ainda não há cobranças registradas para esta unidade."
+                        : "Não há cobranças para o ano selecionado."}
+                    </td>
+                  </tr>
+                ) : null}
                 {cobrancasDoAno.map((cobranca) => {
                   const status = statusDaCobranca(cobranca);
 
                   return (
                     <tr
                       key={cobranca.id}
-                      className="transition-colors hover:bg-slate-50/80"
+                      className="transition-colors hover:bg-slate-50"
                     >
                       <th
                         scope="row"
-                        className="whitespace-nowrap px-6 py-4 font-semibold capitalize text-slate-900"
+                        className="whitespace-nowrap px-4 py-3 font-semibold capitalize text-slate-900"
                       >
                         {formatarCompetencia(cobranca.competencia)}
                       </th>
-                      <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-700">
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
                         {formatarMoeda(cobranca.valor)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                         {formatarData(cobranca.vencimento)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                         {formatarData(cobranca.pagoEm)}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                         {cobranca.formaPagamento ?? "—"}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${classeStatus(status)}`}
-                        >
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        <StatusBadge tone={tomStatus(status)}>
                           {status}
-                        </span>
+                        </StatusBadge>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
-          </div>
-        )}
+        </div>
       </section>
     </div>
   );

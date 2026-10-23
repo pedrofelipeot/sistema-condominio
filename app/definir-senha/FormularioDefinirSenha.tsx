@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import Campo from "../components/Campo";
+import PageHeader from "../components/PageHeader";
+import { acaoPrimaria } from "../components/estilosAcoes";
 import { api, ErroApi } from "@/lib/api-cliente";
 
 export default function FormularioDefinirSenha() {
@@ -59,13 +61,13 @@ export default function FormularioDefinirSenha() {
         />
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/20 to-transparent"
+          className="absolute inset-0 bg-slate-950/50"
         />
         <div className="absolute inset-x-0 bottom-0 p-10 lg:p-14">
           <p className="text-sm font-semibold uppercase tracking-widest text-white">
             Gestão do condomínio
           </p>
-          <h2 className="mt-2 text-4xl font-bold leading-tight text-white">
+          <h2 className="mt-2 text-4xl font-semibold leading-tight text-white">
             Portal do Morador
           </h2>
           <p className="mt-3 max-w-md text-lg leading-relaxed text-slate-200">
@@ -75,69 +77,43 @@ export default function FormularioDefinirSenha() {
       </div>
 
       <section className="relative flex min-h-dvh items-center justify-center overflow-hidden px-6 py-8 sm:px-10 md:min-h-0">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-blue-300/40 blur-3xl"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full bg-sky-300/40 blur-3xl"
-        />
-
-        <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-300/50 sm:p-8">
-          <div
-            aria-hidden="true"
-            className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-blue-700 to-sky-500"
-          />
+        <div className="relative w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
 
           {!token ? (
             <>
-              <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">
-                Convite de acesso
-              </p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">
-                Link inválido
-              </h1>
-              <p className="mt-3 text-base leading-relaxed text-slate-600">
-                Este link de convite não é válido. Solicite um novo à administração.
-              </p>
+              <PageHeader
+                eyebrow="Convite de acesso"
+                title="Link inválido"
+                description="Este link de convite não é válido. Solicite um novo à administração."
+              />
               <Link
                 href="/login"
-                className="mt-6 flex min-h-14 w-full items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-xl font-bold text-white shadow-md shadow-blue-700/30 transition-colors hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                className={`${acaoPrimaria} mt-6 w-full`}
               >
                 Ir para o acesso
               </Link>
             </>
           ) : concluido ? (
             <>
-              <p className="text-sm font-semibold uppercase tracking-widest text-emerald-700">
-                Acesso configurado
-              </p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">
-                Senha definida
-              </h1>
-              <p className="mt-3 text-base leading-relaxed text-slate-600">
-                Sua senha foi definida com sucesso. Agora você já pode entrar no
-                Portal do Morador.
-              </p>
+              <PageHeader
+                eyebrow="Acesso configurado"
+                title="Senha definida"
+                description="Sua senha foi definida com sucesso. Agora você já pode entrar no Portal do Morador."
+              />
               <Link
                 href="/login"
-                className="mt-6 flex min-h-14 w-full items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-xl font-bold text-white shadow-md shadow-blue-700/30 transition-colors hover:bg-blue-800 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
+                className={`${acaoPrimaria} mt-6 w-full`}
               >
                 Ir para o acesso
               </Link>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">
-                Convite de acesso
-              </p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-900">
-                Defina sua senha
-              </h1>
-              <p className="mt-2 text-base leading-relaxed text-slate-600">
-                Crie uma senha para acessar o Portal do Morador.
-              </p>
+              <PageHeader
+                eyebrow="Convite de acesso"
+                title="Defina sua senha"
+                description="Crie uma senha para acessar o Portal do Morador."
+              />
 
               <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                 <Campo
@@ -161,18 +137,20 @@ export default function FormularioDefinirSenha() {
                 {erro && (
                   <div
                     role="alert"
-                    className="rounded-xl border border-red-200 bg-red-50 p-4 text-base font-medium text-red-800"
+                    className="rounded-lg border border-red-200 bg-red-50 p-4 text-base font-medium text-red-800"
                   >
                     {erro}
                   </div>
                 )}
-                <button
-                  type="submit"
-                  disabled={enviando}
-                  className="min-h-14 w-full rounded-xl bg-blue-700 px-6 py-3 text-xl font-bold text-white shadow-md shadow-blue-700/30 transition-colors hover:bg-blue-800 active:bg-blue-900 focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {enviando ? "Salvando..." : "Definir senha"}
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={enviando}
+                    className={acaoPrimaria}
+                  >
+                    {enviando ? "Salvando..." : "Definir senha"}
+                  </button>
+                </div>
               </form>
             </>
           )}

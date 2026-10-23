@@ -5,6 +5,15 @@ import Link from "next/link";
 import { api, ErroApi } from "@/lib/api-cliente";
 import { converterCasa, type CasaApi } from "@/lib/conversores";
 import type { Casa } from "@/lib/types";
+import {
+  acaoPrimaria,
+  acaoSecundaria,
+} from "@/app/components/estilosAcoes";
+import {
+  campoFormulario,
+  erroCampoFormulario,
+  rotuloCampo,
+} from "@/app/components/estilosFormulario";
 
 type Resultado = {
   morador: { id: number; nome: string; email: string };
@@ -12,9 +21,6 @@ type Resultado = {
 };
 
 type ErrosPorCampo = Record<string, string[]>;
-
-const campoClasse =
-  "min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 transition-colors hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15";
 
 export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number }) {
   const [casas, setCasas] = useState<Casa[]>([]);
@@ -105,50 +111,59 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
 
   if (resultado) {
     return (
-      <section className="rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+      <section
+        role="status"
+        className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <p className="text-sm font-semibold text-emerald-700">Cadastro concluído</p>
+        <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
           Morador cadastrado
         </h2>
         <p className="mt-1 text-sm text-slate-600">
           {resultado.morador.nome} ({resultado.morador.email})
         </p>
 
-        <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
           Envie este link ao morador (por exemplo, no WhatsApp). Ele aparece só agora e
           vale até {new Date(resultado.convite.expiraEm).toLocaleString("pt-BR")}. Com
           ele, o morador define a própria senha.
         </div>
 
-        <label htmlFor="link-convite" className="mt-5 mb-2 block text-sm font-medium text-slate-700">
-          Link de convite
-        </label>
-        <input
-          id="link-convite"
-          readOnly
-          value={resultado.convite.link}
-          onFocus={(e) => e.currentTarget.select()}
-          className={campoClasse}
-        />
+        <div className="mt-5">
+          <label
+            htmlFor="link-convite"
+            className={rotuloCampo}
+          >
+            Link de convite
+          </label>
+          <input
+            id="link-convite"
+            readOnly
+            value={resultado.convite.link}
+            onFocus={(e) => e.currentTarget.select()}
+            className={campoFormulario}
+          />
+        </div>
 
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-5">
           <button
             type="button"
             onClick={copiar}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800"
+            className={acaoPrimaria}
           >
             {copiado ? "Link copiado" : "Copiar link"}
           </button>
           <button
             type="button"
             onClick={novoCadastro}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className={acaoSecundaria}
           >
             Cadastrar outro morador
           </button>
           {casaFixa && (
             <Link
               href={`/admin/casas/${casaFixa}`}
-              className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+              className={acaoSecundaria}
             >
               Voltar para a casa
             </Link>
@@ -159,41 +174,64 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
   }
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-      <h2 className="text-lg font-semibold tracking-tight text-slate-900">Novo morador</h2>
-      <p className="mt-1 text-sm text-slate-500">
+    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-lg font-semibold tracking-tight text-slate-950">Dados do morador</h2>
+      <p className="mt-1 text-base text-slate-600">
         O morador receberá um link para definir a própria senha.
       </p>
 
-      <form onSubmit={salvar} className="mt-6 space-y-5">
+      <form onSubmit={salvar} className="mt-5 space-y-5">
         <div>
-          <label htmlFor="nome" className="mb-2 block text-sm font-medium text-slate-700">
-            Nome
+          <label htmlFor="nome" className={rotuloCampo}>
+            Nome <span className="font-normal text-slate-500">(obrigatório)</span>
           </label>
-          <input id="nome" value={nome} onChange={(e) => setNome(e.target.value)} className={campoClasse} />
-          {errosCampo.nome && <p className="mt-1.5 text-sm text-rose-700">{errosCampo.nome.join(" ")}</p>}
+          <input
+            id="nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+            aria-invalid={Boolean(errosCampo.nome)}
+            aria-describedby={errosCampo.nome ? "nome-erro" : undefined}
+            className={campoFormulario}
+          />
+          {errosCampo.nome && (
+            <p id="nome-erro" className={erroCampoFormulario}>
+              {errosCampo.nome.join(" ")}
+            </p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700">
-            E-mail
+          <label htmlFor="email" className={rotuloCampo}>
+            E-mail <span className="font-normal text-slate-500">(obrigatório)</span>
           </label>
           <input
             id="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className={campoClasse}
+            aria-invalid={Boolean(errosCampo.email)}
+            aria-describedby={errosCampo.email ? "email-erro" : undefined}
+            className={campoFormulario}
           />
-          {errosCampo.email && <p className="mt-1.5 text-sm text-rose-700">{errosCampo.email.join(" ")}</p>}
+          {errosCampo.email && (
+            <p id="email-erro" className={erroCampoFormulario}>
+              {errosCampo.email.join(" ")}
+            </p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="casa" className="mb-2 block text-sm font-medium text-slate-700">
-            Casa
+          <label
+            htmlFor={casaFixa ? undefined : "casa"}
+            className={rotuloCampo}
+          >
+            Casa <span className="font-normal text-slate-500">(obrigatório)</span>
           </label>
           {casaFixa ? (
-            <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
+            <p
+              id="casa"
+              className="flex min-h-11 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-base font-medium text-slate-700"
+            >
               Casa {casas[0]?.numero ?? "..."}
             </p>
           ) : (
@@ -201,7 +239,9 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
               id="casa"
               value={casaId}
               onChange={(e) => setCasaId(e.target.value)}
-              className={campoClasse}
+              aria-invalid={Boolean(errosCampo.casaId)}
+              aria-describedby={errosCampo.casaId ? "casa-erro" : undefined}
+              className={campoFormulario}
             >
               <option value="">Selecione...</option>
               {casas.map((casa) => (
@@ -211,38 +251,51 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
               ))}
             </select>
           )}
-          {errosCampo.casaId && <p className="mt-1.5 text-sm text-rose-700">{errosCampo.casaId.join(" ")}</p>}
+          {errosCampo.casaId && (
+            <p id="casa-erro" className={erroCampoFormulario}>
+              {errosCampo.casaId.join(" ")}
+            </p>
+          )}
         </div>
 
         <div>
-          <label htmlFor="entrada" className="mb-2 block text-sm font-medium text-slate-700">
-            Data de entrada
+          <label htmlFor="entrada" className={rotuloCampo}>
+            Data de entrada <span className="font-normal text-slate-500">(obrigatório)</span>
           </label>
           <input
             id="entrada"
             type="date"
             value={dataEntrada}
             onChange={(e) => setDataEntrada(e.target.value)}
-            className={campoClasse}
+            aria-invalid={Boolean(errosCampo.dataEntrada)}
+            aria-describedby={errosCampo.dataEntrada ? "entrada-erro" : undefined}
+            className={campoFormulario}
           />
           {errosCampo.dataEntrada && (
-            <p className="mt-1.5 text-sm text-rose-700">{errosCampo.dataEntrada.join(" ")}</p>
+            <p id="entrada-erro" className={erroCampoFormulario}>
+              {errosCampo.dataEntrada.join(" ")}
+            </p>
           )}
         </div>
 
         {erro && (
-          <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800">
+          <div
+            role="alert"
+            className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+          >
             {erro}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={enviando}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {enviando ? "Cadastrando..." : "Cadastrar morador"}
-        </button>
+        <div className="flex justify-end border-t border-slate-100 pt-5">
+          <button
+            type="submit"
+            disabled={enviando}
+            className={acaoPrimaria}
+          >
+            {enviando ? "Cadastrando..." : "Cadastrar morador"}
+          </button>
+        </div>
       </form>
     </section>
   );

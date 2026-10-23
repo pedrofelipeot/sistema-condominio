@@ -6,10 +6,18 @@ import { api, ErroApi } from "@/lib/api-cliente";
 import { converterCasa, type CasaComMoradoresApi } from "@/lib/conversores";
 import Link from "next/link";
 import type { Casa } from "@/lib/types";
+import PageHeader from "@/app/components/PageHeader";
+import StatusBadge from "@/app/components/StatusBadge";
+import { acaoSecundariaAzul } from "@/app/components/estilosAcoes";
+import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario";
 
 export default function CasasPage() {
   const [casas, setCasas] = useState<Casa[]>([]);
   const [casasAtivasIds, setCasasAtivasIds] = useState<number[]>([]);
+  const [busca, setBusca] = useState("");
+  const [filtroOcupacao, setFiltroOcupacao] = useState<
+    "todas" | "ocupadas" | "vazias"
+  >("todas");
   const [unidadesAtivas, setUnidadesAtivas] = useState(0);
   const [receitaMensal, setReceitaMensal] = useState(0);
   const [carregando, setCarregando] = useState(true);
@@ -46,189 +54,214 @@ export default function CasasPage() {
     };
   }, []);
 
+  const casasFiltradas = casas.filter((casa) => {
+    const correspondeBusca = String(casa.numero).includes(busca.trim());
+    const ocupada = casasAtivasIds.includes(casa.id);
+    const correspondeOcupacao =
+      filtroOcupacao === "todas" ||
+      (filtroOcupacao === "ocupadas" && ocupada) ||
+      (filtroOcupacao === "vazias" && !ocupada);
+
+    return correspondeBusca && correspondeOcupacao;
+  });
+
   return (
-    <div className="space-y-10">
-      <header className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-9 text-white shadow-xl shadow-slate-900/10 sm:px-10 sm:py-11">
-        <div
-          aria-hidden="true"
-          className="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.04]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-28 right-28 h-56 w-56 rounded-full bg-blue-500/10 blur-2xl"
-        />
-        <div className="relative max-w-2xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-blue-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-            Gestão do condomínio
-          </span>
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Casas
-          </h1>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
-            Acompanhe os imóveis cadastrados, consulte os valores e acesse os
-            detalhes de cada unidade.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Gestão do condomínio"
+        title="Casas"
+        description="Acompanhe os imóveis cadastrados, consulte os valores e acesse os detalhes de cada unidade."
+      />
 
       {carregando ? (
         <div
           role="status"
-          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+          className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500"
         >
           Carregando as casas...
         </div>
       ) : erro ? (
         <div
           role="alert"
-          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+          className="rounded-lg border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
         >
           {erro}
         </div>
       ) : (
         <>
-          <section aria-label="Resumo das casas" className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Unidades cadastradas</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+          <section
+            aria-label="Resumo das casas"
+            className="grid gap-3 sm:grid-cols-3"
+          >
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Unidades cadastradas
+              </p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-slate-900">
                 {casas.length}
               </p>
-              <p className="mt-1 text-sm text-slate-500">casas no condomínio</p>
+              <p className="mt-1 text-base text-slate-600">casas no condomínio</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Unidades ativas</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Unidades ativas
+              </p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-slate-900">
                 {unidadesAtivas}
               </p>
-              <p className="mt-1 text-sm text-slate-500">com morador ativo</p>
+              <p className="mt-1 text-base text-slate-600">com morador ativo</p>
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-medium text-slate-500">Aluguel mensal previsto</p>
-              <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Aluguel mensal previsto
+              </p>
+              <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-slate-900">
                 {formatarMoeda(receitaMensal)}
               </p>
-              <p className="mt-1 text-sm text-slate-500">considerando casas ativas</p>
+              <p className="mt-1 text-base text-slate-600">
+                considerando casas ativas
+              </p>
             </div>
           </section>
 
           <section aria-labelledby="lista-casas-titulo">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+            <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
                 <h2
                   id="lista-casas-titulo"
-                  className="text-xl font-semibold tracking-tight text-slate-900"
+                  className="text-xl font-semibold tracking-tight text-slate-950"
                 >
                   Todas as unidades
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-base text-slate-600">
                   Selecione uma casa para consultar moradores e cobranças.
                 </p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-                {casas.length} {casas.length === 1 ? "unidade" : "unidades"}
-              </span>
+              {casas.length > 0 && (
+                <div className="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_auto] lg:min-w-[28rem]">
+                  <label className={rotuloCampo}>
+                    Pesquisar casa
+                    <input
+                      type="search"
+                      inputMode="numeric"
+                      value={busca}
+                      onChange={(event) =>
+                        setBusca(event.target.value.replace(/\D/g, ""))
+                      }
+                      placeholder="Número da unidade"
+                      className={campoFormulario}
+                    />
+                  </label>
+                  <label className={rotuloCampo}>
+                    Ocupação
+                    <select
+                      value={filtroOcupacao}
+                      onChange={(event) => {
+                        const valor = event.target.value;
+                        if (
+                          valor === "todas" ||
+                          valor === "ocupadas" ||
+                          valor === "vazias"
+                        ) {
+                          setFiltroOcupacao(valor);
+                        }
+                      }}
+                      className={campoFormulario}
+                    >
+                      <option value="todas">Todas</option>
+                      <option value="ocupadas">Ocupadas</option>
+                      <option value="vazias">Vazias</option>
+                    </select>
+                  </label>
+                </div>
+              )}
             </div>
 
-            {casas.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-14 text-center">
-                <h3 className="text-base font-semibold text-slate-900">
-                  Nenhuma casa cadastrada
-                </h3>
-                <p className="mt-2 text-sm text-slate-500">
-                  As unidades cadastradas aparecerão aqui.
-                </p>
-              </div>
-            ) : (
-              <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {casas.map((casa) => (
-                  <li key={casa.id}>
-                    <Link
-                      href={`/admin/casas/${casa.id}`}
-                      className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-slate-900/[0.06] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition-colors group-hover:bg-blue-100">
-                            <svg
-                              aria-hidden="true"
-                              className="h-6 w-6"
-                              viewBox="0 0 24 24"
-                              fill="none"
+            <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                {casasFiltradas.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+                    <p className="text-base text-slate-600" aria-live="polite">
+                      {casasFiltradas.length}{" "}
+                      {casasFiltradas.length === 1 ? "unidade" : "unidades"}
+                    </p>
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[680px] text-left text-base">
+                    <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left">Unidade</th>
+                        <th scope="col" className="px-4 py-3 text-left">Ocupação</th>
+                        <th scope="col" className="px-4 py-3 text-left">Quartos</th>
+                        <th scope="col" className="px-4 py-3 text-left">Aluguel mensal</th>
+                        <th scope="col" className="px-4 py-3 text-left">Vencimento</th>
+                        <th scope="col" className="px-4 py-3 text-left">Detalhes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {casasFiltradas.map((casa) => {
+                        const ocupada = casasAtivasIds.includes(casa.id);
+
+                        return (
+                          <tr
+                            key={casa.id}
+                            className="transition-colors hover:bg-slate-50"
+                          >
+                            <th
+                              scope="row"
+                              className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900"
                             >
-                              <path
-                                d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V10Z"
-                                stroke="currentColor"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="1.7"
-                              />
-                            </svg>
-                          </span>
-                          <div>
-                            <p className="text-xs font-medium uppercase tracking-wider text-slate-500">
-                              Unidade
-                            </p>
-                            <h3 className="mt-0.5 text-lg font-semibold text-slate-900">
                               Casa {casa.numero}
-                            </h3>
-                            <p
-                              className={`mt-1 text-xs font-medium ${
-                                casasAtivasIds.includes(casa.id)
-                                  ? "text-emerald-700"
-                                  : "text-slate-500"
-                              }`}
-                            >
-                              {casasAtivasIds.includes(casa.id)
-                                ? "Casa ativa"
-                                : "Casa inativa"}
+                            </th>
+                            <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                              <StatusBadge tone={ocupada ? "success" : "neutral"}>
+                                {ocupada ? "Ocupada" : "Vazia"}
+                              </StatusBadge>
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                              {casa.quartos} {casa.quartos === 1 ? "quarto" : "quartos"}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
+                              {formatarMoeda(casa.valorAluguel)}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                              Dia {casa.diaVencimento}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                              <Link
+                                href={`/admin/casas/${casa.id}`}
+                                className={acaoSecundariaAzul}
+                                aria-label={`Ver detalhes da Casa ${casa.numero}`}
+                              >
+                                Ver detalhes
+                              </Link>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {casasFiltradas.length === 0 && (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-4 py-12 text-center text-slate-600"
+                          >
+                            <p className="font-semibold text-slate-900">
+                              {casas.length === 0
+                                ? "Nenhuma casa cadastrada"
+                                : "Nenhuma casa encontrada"}
                             </p>
-                          </div>
-                        </div>
-                        <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-600">
-                          {casa.quartos} {casa.quartos === 1 ? "quarto" : "quartos"}
-                        </span>
-                      </div>
-
-                      <div className="my-5 h-px bg-slate-100" />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs font-medium text-slate-500">Aluguel mensal</p>
-                          <p className="mt-1 text-base font-semibold text-slate-900">
-                            {formatarMoeda(casa.valorAluguel)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-500">Vencimento</p>
-                          <p className="mt-1 text-base font-semibold text-slate-900">
-                            Dia {casa.diaVencimento}
-                          </p>
-                        </div>
-                      </div>
-
-                      <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-blue-700">
-                        Ver detalhes
-                        <svg
-                          aria-hidden="true"
-                          className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                        >
-                          <path
-                            d="M4 10h12m-5-5 5 5-5 5"
-                            stroke="currentColor"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.7"
-                          />
-                        </svg>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
+                            <p className="mt-2">
+                              {casas.length === 0
+                                ? "As unidades cadastradas aparecerão aqui."
+                                : "Ajuste a pesquisa ou o filtro de ocupação."}
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+            </div>
           </section>
         </>
       )}

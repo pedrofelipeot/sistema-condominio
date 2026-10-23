@@ -17,6 +17,14 @@ import { statusDaCobranca } from "@/lib/status";
 import Link from "next/link";
 import type { Casa, Cobranca } from "@/lib/types";
 import RegistrarPagamentoModal from "@/app/components/admin/RegistrarPagamentoModal";
+import PageHeader from "@/app/components/PageHeader";
+import StatusBadge from "@/app/components/StatusBadge";
+import {
+  acaoPerigosa,
+  acaoPrimaria,
+  acaoSecundaria,
+} from "@/app/components/estilosAcoes";
+import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario";
 
 const COBRANCAS_POR_PAGINA = 12;
 type FiltroStatusCobranca = "Todas" | "Paga" | "Pendente" | "Em atraso";
@@ -27,7 +35,7 @@ export default function CasaIdPage() {
       fallback={
         <div
           role="status"
-          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+          className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500"
         >
           Carregando os dados da casa...
         </div>
@@ -128,7 +136,7 @@ function DetalhesCasa({ id }: { id: string }) {
     return (
       <div
         role="status"
-        className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+        className="rounded-lg border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500"
       >
         Carregando os dados da casa...
       </div>
@@ -140,7 +148,7 @@ function DetalhesCasa({ id }: { id: string }) {
       <div className="space-y-4">
         <div
           role="alert"
-          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+          className="rounded-lg border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
         >
           {erro?.status === 404
             ? "Casa não encontrada."
@@ -148,7 +156,7 @@ function DetalhesCasa({ id }: { id: string }) {
         </div>
         <Link
           href="/admin/casas"
-          className="text-sm font-semibold text-blue-700 hover:underline"
+          className={acaoSecundaria}
         >
           Voltar para casas
         </Link>
@@ -188,19 +196,15 @@ function DetalhesCasa({ id }: { id: string }) {
 
   return (
     <div className="space-y-8">
-      <header className="relative overflow-hidden rounded-3xl bg-slate-950 px-7 py-8 text-white shadow-xl shadow-slate-900/10 sm:px-10 sm:py-10">
-        <div
-          aria-hidden="true"
-          className="absolute -right-16 -top-24 h-72 w-72 rounded-full border-[36px] border-white/[0.04]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute -bottom-28 right-28 h-56 w-56 rounded-full bg-blue-500/10 blur-2xl"
-        />
-        <div className="relative">
+      <PageHeader
+        eyebrow="Detalhes da unidade"
+        title={`Casa ${casa.numero}`}
+        description="Informações da unidade, moradores e cobranças do condomínio."
+        badge={ocupada ? "Ocupada" : "Vazia"}
+        action={
           <Link
             href="/admin/casas"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/30"
+            className={acaoSecundaria}
           >
             <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 20 20" fill="none">
               <path
@@ -213,187 +217,152 @@ function DetalhesCasa({ id }: { id: string }) {
             </svg>
             Voltar para casas
           </Link>
-          <div className="mt-6 flex flex-wrap items-end justify-between gap-5">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-blue-200">
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-                Detalhes da unidade
-              </span>
-              <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">
-                Casa {casa.numero}
-              </h1>
-              <p className="mt-2 text-sm leading-6 text-slate-300 sm:text-base">
-                Informações da unidade, moradores e cobranças do condomínio.
-              </p>
-            </div>
-            <span
-              className={`inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-semibold ${
-                ocupada
-                  ? "border-emerald-300/20 bg-emerald-400/10 text-emerald-200"
-                  : "border-slate-300/20 bg-white/[0.06] text-slate-200"
-              }`}
-            >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  ocupada ? "bg-emerald-400" : "bg-slate-400"
-                }`}
-              />
-              {ocupada ? "Ocupada" : "Vazia"}
-            </span>
-          </div>
-        </div>
-      </header>
+        }
+      />
 
-      <section aria-label="Resumo da unidade" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Quartos</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-            {casa.quartos}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            {casa.quartos === 1 ? "quarto na unidade" : "quartos na unidade"}
-          </p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Aluguel mensal</p>
-          <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">
-            {formatarMoeda(casa.valorAluguel)}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">valor previsto da unidade</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Vencimento</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-            Dia {casa.diaVencimento}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">vencimento mensal</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Moradores ativos</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
-            {moradoresAtivos}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            {moradores.length} {moradores.length === 1 ? "cadastro" : "cadastros"} no total
-          </p>
-        </div>
+      <section
+        aria-labelledby="informacoes-unidade-titulo"
+        className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+      >
+        <h2 id="informacoes-unidade-titulo" className="text-lg font-semibold text-slate-950">
+          Informações da unidade
+        </h2>
+        <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Quartos</dt>
+            <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+              {casa.quartos} {casa.quartos === 1 ? "quarto" : "quartos"}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Aluguel mensal</dt>
+            <dd className="mt-1 text-xl font-semibold tracking-tight tabular-nums text-slate-900">
+              {formatarMoeda(casa.valorAluguel)}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Vencimento</dt>
+            <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">Dia {casa.diaVencimento}</dd>
+          </div>
+          <div>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Moradores ativos</dt>
+            <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+              {moradoresAtivos}
+              <span className="ml-2 text-sm font-normal text-slate-500">
+                ({moradores.length} {moradores.length === 1 ? "cadastro" : "cadastros"} no total)
+              </span>
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <section aria-labelledby="moradores-titulo">
-  <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-    <div>
-      <h2
-        id="moradores-titulo"
-        className="text-xl font-semibold tracking-tight text-slate-900"
-      >
-        Moradores
-      </h2>
-      <p className="mt-1 text-sm text-slate-500">
-        Pessoas vinculadas a esta unidade e situação de ocupação.
-      </p>
-    </div>
-
-    <div className="flex items-center gap-3">
-      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600">
-        {moradores.length} {moradores.length === 1 ? "morador" : "moradores"}
-      </span>
-      <Link
-        href={`/admin/casas/${id}/cadastro-morador`}
-        className="inline-flex min-h-10 items-center justify-center rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/20"
-      >
-        Cadastrar morador
-      </Link>
-    </div>
-  </div>
-
-  {erroDesativacao && (
-    <p
-      role="alert"
-      className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
-    >
-      {erroDesativacao}
-    </p>
-  )}
-
-  {moradores.length === 0 ? (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-      <h3 className="text-base font-semibold text-slate-900">
-        Nenhum morador cadastrado
-      </h3>
-      <p className="mt-2 text-sm text-slate-500">
-        Os moradores vinculados a esta casa aparecerão aqui.
-      </p>
-    </div>
-  ) : (
-    <ul className="grid gap-4 lg:grid-cols-2">
-      {moradores.map((morador) => (
-        <li
-          key={morador.id}
-          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-slate-900">{morador.nome}</h3>
-              <p className="mt-1 break-all text-sm text-slate-500">{morador.email}</p>
-            </div>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                morador.ativo
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-slate-100 text-slate-600"
-              }`}
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2
+              id="moradores-titulo"
+              className="text-xl font-semibold tracking-tight text-slate-950"
             >
-              {morador.ativo ? "Ativo" : "Inativo"}
-            </span>
+              Moradores
+            </h2>
+            <p className="mt-1 text-base text-slate-600">
+              Pessoas vinculadas a esta unidade e situação de ocupação.
+            </p>
           </div>
-          <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-            <div>
-              <dt className="text-xs font-medium text-slate-500">Data de entrada</dt>
-              <dd className="mt-1 text-sm font-medium text-slate-800">
-                {formatarData(new Date(morador.dataEntrada))}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium text-slate-500">Data de saída</dt>
-              <dd className="mt-1 text-sm font-medium text-slate-800">
-                {morador.dataSaida ? formatarData(new Date(morador.dataSaida)) : "-"}
-              </dd>
-            </div>
-          </dl>
-          {morador.ativo && (
-            <button
-              type="button"
-              onClick={() => void desativarMorador(morador)}
-              disabled={desativandoMoradorId !== null}
-              className="mt-5 rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-600/15 disabled:cursor-wait disabled:opacity-60"
-            >
-              {desativandoMoradorId === morador.usuarioId
-                ? "Desativando..."
-                : "Desativar morador"}
-            </button>
-          )}
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
+          <Link
+            href={`/admin/casas/${id}/cadastro-morador`}
+            className={acaoPrimaria}
+          >
+            Cadastrar morador
+          </Link>
+        </div>
+
+        {erroDesativacao && (
+          <p
+            role="alert"
+            className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+          >
+            {erroDesativacao}
+          </p>
+        )}
+
+        {moradores.length === 0 ? (
+          <div className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <h3 className="text-base font-semibold text-slate-900">
+              Nenhum morador cadastrado
+            </h3>
+            <p className="mt-2 text-base text-slate-600">
+              Os moradores vinculados a esta casa aparecerão aqui.
+            </p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-slate-200 border-y border-slate-200">
+            {moradores.map((morador) => (
+              <li
+                key={morador.id}
+                className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-semibold text-slate-900">{morador.nome}</h3>
+                    <StatusBadge tone={morador.ativo ? "success" : "neutral"}>
+                      {morador.ativo ? "Ativo" : "Inativo"}
+                    </StatusBadge>
+                  </div>
+                  <p className="mt-1 break-all text-sm text-slate-500">
+                    {morador.email}
+                  </p>
+                </div>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:min-w-[18rem]">
+                  <div>
+                    <dt className="text-slate-500">Data de entrada</dt>
+                    <dd className="mt-0.5 font-medium text-slate-800">
+                      {formatarData(new Date(morador.dataEntrada))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Data de saída</dt>
+                    <dd className="mt-0.5 font-medium text-slate-800">
+                      {morador.dataSaida
+                        ? formatarData(new Date(morador.dataSaida))
+                        : "—"}
+                    </dd>
+                  </div>
+                </dl>
+                {morador.ativo && (
+                  <button
+                    type="button"
+                    onClick={() => void desativarMorador(morador)}
+                    disabled={desativandoMoradorId !== null}
+                    className={`${acaoPerigosa} self-start lg:self-auto`}
+                  >
+                    {desativandoMoradorId === morador.usuarioId
+                      ? "Desativando..."
+                      : "Desativar morador"}
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section aria-labelledby="cobrancas-titulo">
-        <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h2
               id="cobrancas-titulo"
-              className="text-xl font-semibold tracking-tight text-slate-900"
+              className="text-xl font-semibold tracking-tight text-slate-950"
             >
               Cobranças
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-base text-slate-600">
               Histórico de cobranças da Casa {casa.numero}, das mais recentes às mais antigas.
             </p>
           </div>
           {cobrancas.length > 0 && (
             <div className="flex flex-wrap items-end gap-3">
-              <label className="text-sm font-medium text-slate-700">
+              <label className={`${rotuloCampo} min-w-36`}>
                 Ano
                 <select
                   value={anoFiltro}
@@ -401,7 +370,7 @@ function DetalhesCasa({ id }: { id: string }) {
                     setAnoFiltro(event.target.value);
                     setPaginaCobrancas(1);
                   }}
-                  className="mt-1 block min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                  className={`${campoFormulario} mt-1.5 block`}
                 >
                   <option value="todos">Todos</option>
                   {anosCobrancas.map((ano) => (
@@ -409,7 +378,7 @@ function DetalhesCasa({ id }: { id: string }) {
                   ))}
                 </select>
               </label>
-              <label className="text-sm font-medium text-slate-700">
+              <label className={`${rotuloCampo} min-w-36`}>
                 Status
                 <select
                   value={statusFiltro}
@@ -417,7 +386,7 @@ function DetalhesCasa({ id }: { id: string }) {
                     setStatusFiltro(event.target.value as FiltroStatusCobranca);
                     setPaginaCobrancas(1);
                   }}
-                  className="mt-1 block min-h-10 rounded-lg border border-slate-300 bg-white px-3 text-sm font-normal text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                  className={`${campoFormulario} mt-1.5 block`}
                 >
                   <option value="Todas">Todos</option>
                   <option value="Paga">Paga</option>
@@ -429,88 +398,61 @@ function DetalhesCasa({ id }: { id: string }) {
           )}
         </div>
 
-        {cobrancas.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <h3 className="text-base font-semibold text-slate-900">
-              Nenhuma cobrança cadastrada
-            </h3>
-            <p className="mt-2 text-sm text-slate-500">
-              As cobranças desta casa aparecerão aqui.
-            </p>
-          </div>
-        ) : cobrancasFiltradas.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <p className="text-sm text-slate-600">
-              Nenhuma cobrança encontrada com os filtros selecionados.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setAnoFiltro("todos");
-                setStatusFiltro("Todas");
-                setPaginaCobrancas(1);
-              }}
-              className="mt-3 text-sm font-semibold text-blue-700 hover:underline"
-            >
-              Limpar filtros
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-left text-sm">
-                <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <table className="w-full min-w-[920px] text-left text-base">
+                <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                   <tr>
-                    <th scope="col" className="px-5 py-3.5">Competência</th>
-                    <th scope="col" className="px-5 py-3.5">Valor</th>
-                    <th scope="col" className="px-5 py-3.5">Vencimento</th>
-                    <th scope="col" className="px-5 py-3.5">Pagamento</th>
-                    <th scope="col" className="px-5 py-3.5">Forma</th>
-                    <th scope="col" className="px-5 py-3.5">Status</th>
-                    <th scope="col" className="px-5 py-3.5">Ação</th>
+                    <th scope="col" className="px-4 py-3 text-left">Competência</th>
+                    <th scope="col" className="px-4 py-3 text-left">Valor</th>
+                    <th scope="col" className="px-4 py-3 text-left">Vencimento</th>
+                    <th scope="col" className="px-4 py-3 text-left">Pagamento</th>
+                    <th scope="col" className="px-4 py-3 text-left">Forma</th>
+                    <th scope="col" className="px-4 py-3 text-left">Status</th>
+                    <th scope="col" className="px-4 py-3 text-left">Ação</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-200">
                   {cobrancasVisiveis.map((cobranca) => {
                     const status = statusDaCobranca(cobranca);
-                    const statusClass =
+                    const tom: "success" | "danger" | "warning" =
                       status === "Paga"
-                        ? "bg-emerald-50 text-emerald-700"
+                        ? "success"
                         : status === "Em atraso"
-                          ? "bg-rose-50 text-rose-700"
-                          : "bg-amber-50 text-amber-700";
+                          ? "danger"
+                          : "warning";
 
                     return (
-                      <tr key={cobranca.id} className="hover:bg-slate-50/80">
-                        <th scope="row" className="whitespace-nowrap px-5 py-3.5 font-semibold text-slate-900">
+                      <tr key={cobranca.id} className="transition-colors hover:bg-slate-50">
+                        <th scope="row" className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">
                           {new Date(`${cobranca.competencia}-01T00:00:00.000Z`).toLocaleDateString(
                             "pt-BR",
                             { month: "long", year: "numeric", timeZone: "UTC" },
                           )}
                         </th>
-                        <td className="whitespace-nowrap px-5 py-3.5 font-medium text-slate-700">
+                        <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
                           {formatarMoeda(cobranca.valor)}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                           {formatarData(cobranca.vencimento)}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                           {formatarData(cobranca.pagoEm)}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5 text-slate-600">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                           {cobranca.formaPagamento ?? "—"}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${statusClass}`}>
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                          <StatusBadge tone={tom}>
                             {status}
-                          </span>
+                          </StatusBadge>
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3.5">
+                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                           {cobranca.status !== "PAGA" ? (
                             <button
                               type="button"
                               onClick={() => setCobrancaParaPagar(cobranca)}
-                              className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                              className={acaoSecundaria}
                             >
                               Registrar Pagamento
                             </button>
@@ -521,11 +463,48 @@ function DetalhesCasa({ id }: { id: string }) {
                       </tr>
                     );
                   })}
+                  {cobrancasFiltradas.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-4 py-12 text-center text-slate-600"
+                      >
+                        {cobrancas.length === 0 ? (
+                          <>
+                            <p className="font-semibold text-slate-900">
+                              Nenhuma cobrança cadastrada
+                            </p>
+                            <p className="mt-2">
+                              As cobranças desta casa aparecerão aqui.
+                            </p>
+                          </>
+                        ) : (
+                          <p>
+                            Nenhuma cobrança encontrada com os filtros selecionados.
+                          </p>
+                        )}
+                        {cobrancas.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAnoFiltro("todos");
+                              setStatusFiltro("Todas");
+                              setPaginaCobrancas(1);
+                            }}
+                            className={`${acaoSecundaria} mt-3`}
+                          >
+                            Limpar filtros
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+            {cobrancasFiltradas.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
-              <p aria-live="polite" className="text-sm text-slate-600">
+              <p aria-live="polite" className="text-base text-slate-600">
                 Exibindo {primeiraCobrancaVisivel}–{ultimaCobrancaVisivel} de{" "}
                 {cobrancasFiltradas.length}{" "}
                 {cobrancasFiltradas.length === 1 ? "cobrança" : "cobranças"}
@@ -536,26 +515,26 @@ function DetalhesCasa({ id }: { id: string }) {
                     type="button"
                     onClick={() => setPaginaCobrancas((pagina) => Math.max(1, pagina - 1))}
                     disabled={paginaAtual === 1}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={acaoSecundaria}
                   >
                     Anterior
                   </button>
-                  <span className="text-sm text-slate-600">
+                  <span className="text-base text-slate-600">
                     Página {paginaAtual} de {totalPaginas}
                   </span>
                   <button
                     type="button"
                     onClick={() => setPaginaCobrancas((pagina) => Math.min(totalPaginas, pagina + 1))}
                     disabled={paginaAtual === totalPaginas}
-                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    className={acaoSecundaria}
                   >
                     Próxima
                   </button>
                 </nav>
               )}
             </div>
+            )}
           </div>
-        )}
       </section>
       {cobrancaParaPagar && (
         <RegistrarPagamentoModal

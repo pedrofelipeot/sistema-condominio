@@ -13,6 +13,7 @@ import {
 } from "@/lib/conversores";
 import type { ConfiguracaoPixApi } from "@/lib/pix";
 import type { Casa, Cobranca, Morador } from "@/lib/types";
+import { acaoSecundaria } from "@/app/components/estilosAcoes";
 
 export default function PagamentosPage() {
   const [morador, setMorador] = useState<Morador | null>(null);
@@ -55,7 +56,7 @@ export default function PagamentosPage() {
       <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
         <div
           role="status"
-          className="rounded-2xl border border-slate-200 bg-white px-6 py-12 text-center text-sm text-slate-500 shadow-sm"
+          className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] px-6 py-12 text-center text-sm text-[var(--morador-text-secondary)]"
         >
           Carregando seus pagamentos...
         </div>
@@ -68,7 +69,7 @@ export default function PagamentosPage() {
       <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
         <div
           role="alert"
-          className="rounded-2xl border border-rose-200 bg-rose-50 px-6 py-5 text-sm font-medium text-rose-800"
+          className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-6 py-5 text-sm font-medium text-[var(--morador-danger)]"
         >
           {erro ?? "Não foi possível carregar seus dados."}
         </div>
@@ -80,7 +81,7 @@ export default function PagamentosPage() {
     <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
       <Link
         href="/morador"
-        className="mb-5 inline-flex min-h-10 items-center gap-2 rounded-lg text-sm font-semibold text-blue-700 hover:text-blue-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+        className={`${acaoSecundaria} mb-5`}
       >
         <span aria-hidden="true">←</span>
         Voltar ao início

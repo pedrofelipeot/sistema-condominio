@@ -4,6 +4,8 @@ import { useState } from "react";
 import { formatarData, formatarMoeda } from "@/lib/format";
 import { statusDaCobranca } from "@/lib/status";
 import type { Casa, Cobranca } from "@/lib/types";
+import { acaoPillBase } from "./estilosAcoes";
+import StatusBadge from "./StatusBadge";
 
 type Props = { casas: Casa[]; cobrancas: Cobranca[] };
 type FiltroStatus = "Paga" | "Em atraso" | "Pendente" | "Sem cobrança";
@@ -60,57 +62,60 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
     },
   ];
 
-  function classeStatus(status: string) {
-    if (status === "Paga") return "bg-emerald-50 text-emerald-700";
-    if (status === "Em atraso") return "bg-rose-50 text-rose-700";
-    if (status === "Pendente") return "bg-amber-50 text-amber-700";
-    return "bg-slate-100 text-slate-600";
+  function tomStatus(status: string) {
+    if (status === "Paga") return "success" as const;
+    if (status === "Em atraso") return "danger" as const;
+    if (status === "Pendente") return "warning" as const;
+    return "neutral" as const;
   }
 
   return (
-    <div className="space-y-8">
-      <section aria-label="Indicadores de cobranças" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="space-y-6">
+      <section
+        aria-label="Indicadores de cobranças"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+      >
         {indicadores.map((indicador) => (
           <article
             key={indicador.rotulo}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+            className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                   {indicador.rotulo}
                 </p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+                <p className="mt-2 text-2xl font-semibold tracking-tight tabular-nums text-slate-900">
                   {indicador.total}
                 </p>
               </div>
               <span
                 aria-hidden="true"
-                className={`mt-1 h-2.5 w-2.5 rounded-full ${indicador.cor}`}
+                className={`mt-1.5 h-2 w-2 rounded-full ${indicador.cor}`}
               />
             </div>
-            <p className="mt-1 text-sm text-slate-500">{indicador.detalhe}</p>
+            <p className="mt-1 text-base text-slate-600">{indicador.detalhe}</p>
           </article>
         ))}
       </section>
 
       <section
         aria-labelledby="detalhamento-casas-titulo"
-        className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+        className="overflow-hidden rounded-lg border border-slate-200 bg-white"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-5 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2
               id="detalhamento-casas-titulo"
-              className="text-lg font-semibold tracking-tight text-slate-900"
+              className="text-lg font-semibold tracking-tight text-slate-950"
             >
               Cobranças por unidade
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-base text-slate-600">
               Situação de cada casa na competência selecionada.
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div
               aria-label="Filtrar unidades por status"
               className="flex flex-wrap gap-2"
@@ -134,10 +139,10 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
                       status !== null && filtroStatus === status ? null : status,
                     )
                   }
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15 ${
+                  className={`${acaoPillBase} ${
                     filtroStatus === status
-                      ? "border-blue-600 bg-blue-600 text-white"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                      ? "border-primary bg-primary text-white hover:bg-primary-hover"
+                      : "border-slate-300 bg-white text-slate-800 hover:bg-slate-50"
                   }`}
                 >
                   {rotulo}
@@ -146,65 +151,61 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
             </div>
             <span
               aria-live="polite"
-              className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-600"
+              className="self-start sm:self-auto"
             >
-              {linhasFiltradas.length}{" "}
-              {linhasFiltradas.length === 1 ? "unidade" : "unidades"}
+              <StatusBadge tone="neutral">
+                {linhasFiltradas.length}{" "}
+                {linhasFiltradas.length === 1 ? "unidade" : "unidades"}
+              </StatusBadge>
             </span>
           </div>
         </div>
 
-        {casas.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-slate-500">
-            Nenhuma unidade cadastrada.
-          </p>
-        ) : (
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <table className="w-full min-w-[760px] text-left text-base">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <tr>
-                  <th scope="col" className="px-6 py-3.5">Unidade</th>
-                  <th scope="col" className="px-6 py-3.5">Quartos</th>
-                  <th scope="col" className="px-6 py-3.5">Aluguel</th>
-                  <th scope="col" className="px-6 py-3.5">Vencimento</th>
-                  <th scope="col" className="px-6 py-3.5">Pagamento</th>
-                  <th scope="col" className="px-6 py-3.5">Status</th>
+                  <th scope="col" className="px-4 py-3 text-left">Unidade</th>
+                  <th scope="col" className="px-4 py-3 text-left">Quartos</th>
+                  <th scope="col" className="px-4 py-3 text-left">Aluguel</th>
+                  <th scope="col" className="px-4 py-3 text-left">Vencimento</th>
+                  <th scope="col" className="px-4 py-3 text-left">Pagamento</th>
+                  <th scope="col" className="px-4 py-3 text-left">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-200">
                 {linhasFiltradas.map((linha) => (
                   <tr
                     key={linha.casa.id}
-                    className="transition-colors hover:bg-slate-50/80"
+                    className="transition-colors hover:bg-slate-50"
                   >
                     <th
                       scope="row"
-                      className="whitespace-nowrap px-6 py-4 font-semibold text-slate-900"
+                      className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900"
                     >
                       Casa {linha.casa.numero}
                     </th>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                       {linha.casa.quartos}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 font-medium text-slate-700">
+                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
                       {formatarMoeda(linha.casa.valorAluguel)}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                       {linha.cobranca
                         ? formatarData(linha.cobranca.vencimento)
                         : "—"}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-slate-600">
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                       {linha.cobranca
                         ? formatarData(linha.cobranca.pagoEm)
                         : "—"}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${classeStatus(linha.status)}`}
-                      >
+                    <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                      <StatusBadge tone={tomStatus(linha.status)}>
                         {linha.status}
-                      </span>
+                      </StatusBadge>
                     </td>
                   </tr>
                 ))}
@@ -212,16 +213,18 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-12 text-center text-sm text-slate-500"
+                      className="px-4 py-12 text-center text-slate-600"
                     >
-                      Nenhuma unidade encontrada com este status.
+                      {casas.length === 0
+                        ? "Nenhuma unidade cadastrada."
+                        : "Nenhuma unidade encontrada com este status."}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </section>
     </div>
   );

@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { api, ErroApi } from "@/lib/api-cliente";
 import type { CobrancaApi } from "@/lib/conversores";
+import {
+  acaoPrimaria,
+  acaoSecundaria,
+} from "@/app/components/estilosAcoes";
+import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario";
 
 type Props = {
   cobrancaId: number;
@@ -65,11 +70,11 @@ export default function RegistrarPagamentoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4">
       <section
         aria-labelledby="registrar-pagamento-titulo"
         aria-modal="true"
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
         role="dialog"
       >
         <div className="flex items-start justify-between gap-4">
@@ -90,7 +95,7 @@ export default function RegistrarPagamentoModal({
             aria-label="Fechar"
             onClick={onClose}
             disabled={salvando}
-            className="rounded-lg px-2 py-1 text-slate-500 hover:bg-slate-100 disabled:opacity-50"
+            className={acaoSecundaria}
           >
             ×
           </button>
@@ -100,7 +105,7 @@ export default function RegistrarPagamentoModal({
           <div>
             <label
               htmlFor="forma-pagamento"
-              className="block text-sm font-medium text-slate-700"
+              className={rotuloCampo}
             >
               Forma de pagamento
             </label>
@@ -112,7 +117,7 @@ export default function RegistrarPagamentoModal({
                   event.target.value === "PIX" ? "PIX" : "DINHEIRO",
                 )
               }
-              className="mt-2 min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+              className={`${campoFormulario} mt-1`}
             >
               <option value="PIX">Pix</option>
               <option value="DINHEIRO">Dinheiro</option>
@@ -121,7 +126,7 @@ export default function RegistrarPagamentoModal({
           <div>
             <label
               htmlFor="data-pagamento"
-              className="block text-sm font-medium text-slate-700"
+              className={rotuloCampo}
             >
               Data do pagamento
             </label>
@@ -132,41 +137,46 @@ export default function RegistrarPagamentoModal({
                 type="date"
                 required
                 value={dataPagamento}
-                onChange={(event) => setDataPagamento(event.target.value)}
-                className="min-h-11 flex-1 rounded-lg border border-slate-300 px-3 text-sm text-slate-800 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-600/15"
+                onChange={(event) => {
+                  setDataPagamento(event.target.value);
+                  setErro(null);
+                }}
+                aria-invalid={Boolean(erro && !dataPagamento)}
+                aria-describedby={erro ? "data-pagamento-erro" : undefined}
+                className={`${campoFormulario} min-w-0 flex-1`}
               />
               <button
                 type="button"
                 onClick={preencherDataDeHoje}
-                className="min-h-11 rounded-lg border border-blue-200 px-3 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+                className={acaoSecundaria}
               >
                 Data de Hoje
               </button>
             </div>
+            {erro && (
+              <p
+                id="data-pagamento-erro"
+                role="alert"
+                className="mt-1 text-sm text-red-600"
+              >
+                {erro}
+              </p>
+            )}
           </div>
-
-          {erro && (
-            <p
-              role="alert"
-              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
-            >
-              {erro}
-            </p>
-          )}
 
           <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
               onClick={onClose}
               disabled={salvando}
-              className="min-h-10 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className={acaoSecundaria}
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={salvando || !dataPagamento}
-              className="min-h-10 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className={acaoPrimaria}
             >
               {salvando ? "Registrando..." : "Confirmar pagamento"}
             </button>
