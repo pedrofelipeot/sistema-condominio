@@ -8,8 +8,8 @@ import {
   acaoPerigosa,
   acaoPrimaria,
   acaoSecundaria,
-  acaoSobreCabecalho,
 } from "@/app/components/estilosAcoes";
+import ModalConfirmacao from "@/app/components/ModalConfirmacao";
 import {
   campoFormulario,
   erroCampoFormulario,
@@ -46,6 +46,8 @@ export default function GestaoAvisos() {
   const [texto, setTexto] = useState("");
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [termoBusca, setTermoBusca] = useState("");
+  const [avisoParaExcluir, setAvisoParaExcluir] = useState<Aviso | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
   const [conteudosAbertos, setConteudosAbertos] = useState<Set<number>>(
     () => new Set(),
   );
@@ -177,19 +179,28 @@ export default function GestaoAvisos() {
     setModalAberto(true);
   }
 
-  async function excluir(aviso: Aviso) {
-    if (!confirm(`Excluir o aviso "${aviso.titulo}"?`)) return;
+  async function excluir() {
+    if (!avisoParaExcluir || excluindo) return;
+
     limparErros();
+    setExcluindo(true);
 
     try {
-      await api(`/api/avisos/${aviso.id}`, { method: "DELETE" });
-      if (editandoId === aviso.id) {
+      await api(`/api/avisos/${avisoParaExcluir.id}`, {
+        method: "DELETE",
+      });
+
+      if (editandoId === avisoParaExcluir.id) {
         setModalAberto(false);
         limparFormulario();
       }
+
+      setAvisoParaExcluir(null);
       recarregar();
     } catch (error) {
       tratarFalha(error);
+    } finally {
+      setExcluindo(false);
     }
   }
 
@@ -222,9 +233,11 @@ export default function GestaoAvisos() {
           <button
             type="button"
             onClick={abrirNovoAviso}
-            className={acaoSobreCabecalho}
+            className={acaoPrimaria}
           >
-            <span aria-hidden="true" className="text-lg leading-none">+</span>
+            <span aria-hidden="true" className="text-lg leading-none">
+              +
+            </span>
             Novo aviso
           </button>
         }
@@ -315,7 +328,9 @@ export default function GestaoAvisos() {
                           </p>
                           <p
                             className={`mt-1 text-base leading-6 text-slate-600 ${
-                              conteudoAberto ? "whitespace-pre-line" : "line-clamp-2"
+                              conteudoAberto
+                                ? "whitespace-pre-line"
+                                : "line-clamp-2"
                             }`}
                           >
                             {aviso.texto}
@@ -327,7 +342,9 @@ export default function GestaoAvisos() {
                               onClick={() => alternarConteudo(aviso.id)}
                               className={`${acaoSecundaria} mt-2`}
                             >
-                              {conteudoAberto ? "Recolher conteúdo" : "Ver conteúdo"}
+                              {conteudoAberto
+                                ? "Recolher conteúdo"
+                                : "Ver conteúdo"}
                             </button>
                           )}
                         </td>
@@ -347,7 +364,10 @@ export default function GestaoAvisos() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => excluir(aviso)}
+                              onClick={() => {
+                                limparErros();
+                                setAvisoParaExcluir(aviso);
+                              }}
                               className={acaoPerigosa}
                             >
                               Excluir
@@ -423,11 +443,11 @@ export default function GestaoAvisos() {
 
             <form onSubmit={salvar} className="mt-6 space-y-5">
               <div>
-                <label
-                  htmlFor="aviso-titulo"
-                  className={rotuloCampo}
-                >
-                  Título <span className="font-normal text-slate-500">(obrigatório)</span>
+                <label htmlFor="aviso-titulo" className={rotuloCampo}>
+                  Título{" "}
+                  <span className="font-normal text-slate-500">
+                    (obrigatório)
+                  </span>
                 </label>
                 <input
                   autoFocus
@@ -445,21 +465,18 @@ export default function GestaoAvisos() {
                   className={campoFormulario}
                 />
                 {errosCampo.titulo && (
-                  <p
-                    id="aviso-titulo-erro"
-                    className={erroCampoFormulario}
-                  >
+                  <p id="aviso-titulo-erro" className={erroCampoFormulario}>
                     {errosCampo.titulo.join(" ")}
                   </p>
                 )}
               </div>
 
               <div>
-                <label
-                  htmlFor="aviso-texto"
-                  className={rotuloCampo}
-                >
-                  Mensagem <span className="font-normal text-slate-500">(obrigatório)</span>
+                <label htmlFor="aviso-texto" className={rotuloCampo}>
+                  Mensagem{" "}
+                  <span className="font-normal text-slate-500">
+                    (obrigatório)
+                  </span>
                 </label>
                 <textarea
                   id="aviso-texto"
@@ -476,10 +493,7 @@ export default function GestaoAvisos() {
                   className={`${campoFormulario} resize-y leading-6`}
                 />
                 {errosCampo.texto && (
-                  <p
-                    id="aviso-texto-erro"
-                    className={erroCampoFormulario}
-                  >
+                  <p id="aviso-texto-erro" className={erroCampoFormulario}>
                     {errosCampo.texto.join(" ")}
                   </p>
                 )}
@@ -524,6 +538,24 @@ export default function GestaoAvisos() {
           </section>
         </div>
       )}
+      <ModalConfirmacao
+        aberto={avisoParaExcluir !== null}
+        titulo="Excluir aviso?"
+        descricao={
+          avisoParaExcluir
+            ? `Tem certeza de que deseja excluir o aviso "${avisoParaExcluir.titulo}"? Essa ação não poderá ser desfeita.`
+            : ""
+        }
+        textoConfirmar="Excluir aviso"
+        processando={excluindo}
+        onConfirmar={excluir}
+        onCancelar={() => {
+          if (excluindo) return;
+
+          setAvisoParaExcluir(null);
+          limparErros();
+        }}
+      />
     </div>
   );
 }

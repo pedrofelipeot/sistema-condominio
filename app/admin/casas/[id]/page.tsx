@@ -19,12 +19,17 @@ import type { Casa, Cobranca } from "@/lib/types";
 import RegistrarPagamentoModal from "@/app/components/admin/RegistrarPagamentoModal";
 import PageHeader from "@/app/components/PageHeader";
 import StatusBadge from "@/app/components/StatusBadge";
+import ModalConfirmacao from "@/app/components/ModalConfirmacao";
+
 import {
   acaoPerigosa,
   acaoPrimaria,
   acaoSecundaria,
 } from "@/app/components/estilosAcoes";
-import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario";
+import {
+  campoFormulario,
+  rotuloCampo,
+} from "@/app/components/estilosFormulario";
 
 const COBRANCAS_POR_PAGINA = 12;
 type FiltroStatusCobranca = "Todas" | "Paga" | "Pendente" | "Em atraso";
@@ -56,13 +61,23 @@ function DetalhesCasa({ id }: { id: string }) {
   const [moradores, setMoradores] = useState<MoradorDaCasa[]>([]);
   const [cobrancas, setCobrancas] = useState<Cobranca[]>([]);
   const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<{ mensagem: string; status?: number } | null>(null);
+  const [erro, setErro] = useState<{
+    mensagem: string;
+    status?: number;
+  } | null>(null);
   const [erroDesativacao, setErroDesativacao] = useState<string | null>(null);
-  const [desativandoMoradorId, setDesativandoMoradorId] = useState<number | null>(null);
+  const [desativandoMoradorId, setDesativandoMoradorId] = useState<
+    number | null
+  >(null);
   const [anoFiltro, setAnoFiltro] = useState("todos");
-  const [statusFiltro, setStatusFiltro] = useState<FiltroStatusCobranca>("Todas");
+  const [statusFiltro, setStatusFiltro] =
+    useState<FiltroStatusCobranca>("Todas");
   const [paginaCobrancas, setPaginaCobrancas] = useState(1);
-  const [cobrancaParaPagar, setCobrancaParaPagar] = useState<Cobranca | null>(null);
+  const [cobrancaParaPagar, setCobrancaParaPagar] = useState<Cobranca | null>(
+    null,
+  );
+  const [moradorParaDesativar, setMoradorParaDesativar] =
+    useState<MoradorDaCasa | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -95,14 +110,13 @@ function DetalhesCasa({ id }: { id: string }) {
     };
   }, [id]);
 
-  async function desativarMorador(morador: MoradorDaCasa) {
+  async function confirmarDesativacao() {
+    if (!moradorParaDesativar) return;
+    const morador = moradorParaDesativar;
+
     const dataSaida = new Date().toLocaleDateString("sv-SE", {
       timeZone: "America/Sao_Paulo",
     });
-    const confirmar = window.confirm(
-      `Desativar ${morador.nome}? A ocupação será encerrada com data de saída de hoje, o acesso ao sistema será removido e o histórico da casa será mantido.`,
-    );
-    if (!confirmar) return;
 
     setErroDesativacao(null);
     setDesativandoMoradorId(morador.usuarioId);
@@ -129,6 +143,7 @@ function DetalhesCasa({ id }: { id: string }) {
       );
     } finally {
       setDesativandoMoradorId(null);
+      setMoradorParaDesativar(null); // fecha o modal em qualquer caso
     }
   }
 
@@ -154,10 +169,7 @@ function DetalhesCasa({ id }: { id: string }) {
             ? "Casa não encontrada."
             : (erro?.mensagem ?? "Casa não encontrada.")}
         </div>
-        <Link
-          href="/admin/casas"
-          className={acaoSecundaria}
-        >
+        <Link href="/admin/casas" className={acaoSecundaria}>
           Voltar para casas
         </Link>
       </div>
@@ -166,7 +178,9 @@ function DetalhesCasa({ id }: { id: string }) {
 
   const ocupada = moradores.some((morador) => morador.ativo);
   const moradoresAtivos = moradores.filter((morador) => morador.ativo).length;
-  const anosCobrancas = [...new Set(cobrancas.map((cobranca) => cobranca.competencia.slice(0, 4)))]
+  const anosCobrancas = [
+    ...new Set(cobrancas.map((cobranca) => cobranca.competencia.slice(0, 4))),
+  ]
     .sort()
     .reverse();
   const cobrancasFiltradas = cobrancas.filter((cobranca) => {
@@ -202,11 +216,13 @@ function DetalhesCasa({ id }: { id: string }) {
         description="Informações da unidade, moradores e cobranças do condomínio."
         badge={ocupada ? "Ocupada" : "Vazia"}
         action={
-          <Link
-            href="/admin/casas"
-            className={acaoSecundaria}
-          >
-            <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 20 20" fill="none">
+          <Link href="/admin/casas" className={acaoSecundaria}>
+            <svg
+              aria-hidden="true"
+              className="h-4 w-4"
+              viewBox="0 0 20 20"
+              fill="none"
+            >
               <path
                 d="M16 10H4m5 5-5-5 5-5"
                 stroke="currentColor"
@@ -224,32 +240,46 @@ function DetalhesCasa({ id }: { id: string }) {
         aria-labelledby="informacoes-unidade-titulo"
         className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
       >
-        <h2 id="informacoes-unidade-titulo" className="text-lg font-semibold text-slate-950">
+        <h2
+          id="informacoes-unidade-titulo"
+          className="text-lg font-semibold text-slate-950"
+        >
           Informações da unidade
         </h2>
         <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2 xl:grid-cols-4">
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Quartos</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Quartos
+            </dt>
             <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
               {casa.quartos} {casa.quartos === 1 ? "quarto" : "quartos"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Aluguel mensal</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Aluguel mensal
+            </dt>
             <dd className="mt-1 text-xl font-semibold tracking-tight tabular-nums text-slate-900">
               {formatarMoeda(casa.valorAluguel)}
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Vencimento</dt>
-            <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">Dia {casa.diaVencimento}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Vencimento
+            </dt>
+            <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
+              Dia {casa.diaVencimento}
+            </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">Moradores ativos</dt>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Moradores ativos
+            </dt>
             <dd className="mt-1 text-xl font-semibold tracking-tight text-slate-900">
               {moradoresAtivos}
               <span className="ml-2 text-sm font-normal text-slate-500">
-                ({moradores.length} {moradores.length === 1 ? "cadastro" : "cadastros"} no total)
+                ({moradores.length}{" "}
+                {moradores.length === 1 ? "cadastro" : "cadastros"} no total)
               </span>
             </dd>
           </div>
@@ -304,7 +334,9 @@ function DetalhesCasa({ id }: { id: string }) {
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-semibold text-slate-900">{morador.nome}</h3>
+                    <h3 className="font-semibold text-slate-900">
+                      {morador.nome}
+                    </h3>
                     <StatusBadge tone={morador.ativo ? "success" : "neutral"}>
                       {morador.ativo ? "Ativo" : "Inativo"}
                     </StatusBadge>
@@ -332,7 +364,7 @@ function DetalhesCasa({ id }: { id: string }) {
                 {morador.ativo && (
                   <button
                     type="button"
-                    onClick={() => void desativarMorador(morador)}
+                    onClick={() => setMoradorParaDesativar(morador)}
                     disabled={desativandoMoradorId !== null}
                     className={`${acaoPerigosa} self-start lg:self-auto`}
                   >
@@ -357,7 +389,8 @@ function DetalhesCasa({ id }: { id: string }) {
               Cobranças
             </h2>
             <p className="mt-1 text-base text-slate-600">
-              Histórico de cobranças da Casa {casa.numero}, das mais recentes às mais antigas.
+              Histórico de cobranças da Casa {casa.numero}, das mais recentes às
+              mais antigas.
             </p>
           </div>
           {cobrancas.length > 0 && (
@@ -374,7 +407,9 @@ function DetalhesCasa({ id }: { id: string }) {
                 >
                   <option value="todos">Todos</option>
                   {anosCobrancas.map((ano) => (
-                    <option key={ano} value={ano}>{ano}</option>
+                    <option key={ano} value={ano}>
+                      {ano}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -398,111 +433,133 @@ function DetalhesCasa({ id }: { id: string }) {
           )}
         </div>
 
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] text-left text-base">
-                <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
-                  <tr>
-                    <th scope="col" className="px-4 py-3 text-left">Competência</th>
-                    <th scope="col" className="px-4 py-3 text-left">Valor</th>
-                    <th scope="col" className="px-4 py-3 text-left">Vencimento</th>
-                    <th scope="col" className="px-4 py-3 text-left">Pagamento</th>
-                    <th scope="col" className="px-4 py-3 text-left">Forma</th>
-                    <th scope="col" className="px-4 py-3 text-left">Status</th>
-                    <th scope="col" className="px-4 py-3 text-left">Ação</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {cobrancasVisiveis.map((cobranca) => {
-                    const status = statusDaCobranca(cobranca);
-                    const tom: "success" | "danger" | "warning" =
-                      status === "Paga"
-                        ? "success"
-                        : status === "Em atraso"
-                          ? "danger"
-                          : "warning";
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[920px] text-left text-base">
+              <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
+                <tr>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Competência
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Valor
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Vencimento
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Pagamento
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Forma
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Status
+                  </th>
+                  <th scope="col" className="px-4 py-3 text-left">
+                    Ação
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {cobrancasVisiveis.map((cobranca) => {
+                  const status = statusDaCobranca(cobranca);
+                  const tom: "success" | "danger" | "warning" =
+                    status === "Paga"
+                      ? "success"
+                      : status === "Em atraso"
+                        ? "danger"
+                        : "warning";
 
-                    return (
-                      <tr key={cobranca.id} className="transition-colors hover:bg-slate-50">
-                        <th scope="row" className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900">
-                          {new Date(`${cobranca.competencia}-01T00:00:00.000Z`).toLocaleDateString(
-                            "pt-BR",
-                            { month: "long", year: "numeric", timeZone: "UTC" },
-                          )}
-                        </th>
-                        <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
-                          {formatarMoeda(cobranca.valor)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
-                          {formatarData(cobranca.vencimento)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
-                          {formatarData(cobranca.pagoEm)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
-                          {cobranca.formaPagamento ?? "—"}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
-                          <StatusBadge tone={tom}>
-                            {status}
-                          </StatusBadge>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-slate-800">
-                          {cobranca.status !== "PAGA" ? (
-                            <button
-                              type="button"
-                              onClick={() => setCobrancaParaPagar(cobranca)}
-                              className={acaoSecundaria}
-                            >
-                              Registrar Pagamento
-                            </button>
-                          ) : (
-                            <span className="text-slate-400">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {cobrancasFiltradas.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan={7}
-                        className="px-4 py-12 text-center text-slate-600"
+                  return (
+                    <tr
+                      key={cobranca.id}
+                      className="transition-colors hover:bg-slate-50"
+                    >
+                      <th
+                        scope="row"
+                        className="whitespace-nowrap px-4 py-3 font-semibold text-slate-900"
                       >
-                        {cobrancas.length === 0 ? (
-                          <>
-                            <p className="font-semibold text-slate-900">
-                              Nenhuma cobrança cadastrada
-                            </p>
-                            <p className="mt-2">
-                              As cobranças desta casa aparecerão aqui.
-                            </p>
-                          </>
-                        ) : (
-                          <p>
-                            Nenhuma cobrança encontrada com os filtros selecionados.
-                          </p>
-                        )}
-                        {cobrancas.length > 0 && (
+                        {new Date(
+                          `${cobranca.competencia}-01T00:00:00.000Z`,
+                        ).toLocaleDateString("pt-BR", {
+                          month: "long",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        })}
+                      </th>
+                      <td className="whitespace-nowrap px-4 py-3 text-right font-medium tabular-nums text-slate-800">
+                        {formatarMoeda(cobranca.valor)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        {formatarData(cobranca.vencimento)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        {formatarData(cobranca.pagoEm)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        {cobranca.formaPagamento ?? "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        <StatusBadge tone={tom}>{status}</StatusBadge>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-slate-800">
+                        {cobranca.status !== "PAGA" ? (
                           <button
                             type="button"
-                            onClick={() => {
-                              setAnoFiltro("todos");
-                              setStatusFiltro("Todas");
-                              setPaginaCobrancas(1);
-                            }}
-                            className={`${acaoSecundaria} mt-3`}
+                            onClick={() => setCobrancaParaPagar(cobranca)}
+                            className={acaoSecundaria}
                           >
-                            Limpar filtros
+                            Registrar Pagamento
                           </button>
+                        ) : (
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-            {cobrancasFiltradas.length > 0 && (
+                  );
+                })}
+                {cobrancasFiltradas.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-12 text-center text-slate-600"
+                    >
+                      {cobrancas.length === 0 ? (
+                        <>
+                          <p className="font-semibold text-slate-900">
+                            Nenhuma cobrança cadastrada
+                          </p>
+                          <p className="mt-2">
+                            As cobranças desta casa aparecerão aqui.
+                          </p>
+                        </>
+                      ) : (
+                        <p>
+                          Nenhuma cobrança encontrada com os filtros
+                          selecionados.
+                        </p>
+                      )}
+                      {cobrancas.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAnoFiltro("todos");
+                            setStatusFiltro("Todas");
+                            setPaginaCobrancas(1);
+                          }}
+                          className={`${acaoSecundaria} mt-3`}
+                        >
+                          Limpar filtros
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {cobrancasFiltradas.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
               <p aria-live="polite" className="text-base text-slate-600">
                 Exibindo {primeiraCobrancaVisivel}–{ultimaCobrancaVisivel} de{" "}
@@ -510,10 +567,15 @@ function DetalhesCasa({ id }: { id: string }) {
                 {cobrancasFiltradas.length === 1 ? "cobrança" : "cobranças"}
               </p>
               {totalPaginas > 1 && (
-                <nav aria-label="Paginação do histórico de cobranças" className="flex items-center gap-2">
+                <nav
+                  aria-label="Paginação do histórico de cobranças"
+                  className="flex items-center gap-2"
+                >
                   <button
                     type="button"
-                    onClick={() => setPaginaCobrancas((pagina) => Math.max(1, pagina - 1))}
+                    onClick={() =>
+                      setPaginaCobrancas((pagina) => Math.max(1, pagina - 1))
+                    }
                     disabled={paginaAtual === 1}
                     className={acaoSecundaria}
                   >
@@ -524,7 +586,11 @@ function DetalhesCasa({ id }: { id: string }) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setPaginaCobrancas((pagina) => Math.min(totalPaginas, pagina + 1))}
+                    onClick={() =>
+                      setPaginaCobrancas((pagina) =>
+                        Math.min(totalPaginas, pagina + 1),
+                      )
+                    }
                     disabled={paginaAtual === totalPaginas}
                     className={acaoSecundaria}
                   >
@@ -533,8 +599,8 @@ function DetalhesCasa({ id }: { id: string }) {
                 </nav>
               )}
             </div>
-            )}
-          </div>
+          )}
+        </div>
       </section>
       {cobrancaParaPagar && (
         <RegistrarPagamentoModal
@@ -552,6 +618,16 @@ function DetalhesCasa({ id }: { id: string }) {
           }}
         />
       )}
+      <ModalConfirmacao
+        aberto={moradorParaDesativar !== null}
+        titulo="Desativar morador"
+        descricao={`Desativar ${moradorParaDesativar?.nome ?? ""}? A ocupação será encerrada com data de saída de hoje, o acesso ao sistema será removido e o histórico da casa será mantido.`}
+        textoConfirmar="Desativar"
+        textoProcessando="Desativando..."
+        processando={desativandoMoradorId !== null}
+        onConfirmar={() => void confirmarDesativacao()}
+        onCancelar={() => setMoradorParaDesativar(null)}
+      />
     </div>
   );
 }
