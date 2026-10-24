@@ -1,10 +1,11 @@
 import { AppError } from "@/errors/AppError";
 import { PrismaClientKnownRequestError } from "@/generated/prisma/internal/prismaNamespace";
+import { unstable_rethrow } from "next/navigation";
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
 export function tratarErro(error: unknown) {
-
+   unstable_rethrow(error);
   if (error instanceof ZodError) {
     return NextResponse.json(
       {

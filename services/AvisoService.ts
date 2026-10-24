@@ -8,9 +8,12 @@ type Solicitante = { id: number; perfil: string };
 export class AvisoService {
  
 
-  static listarAvisos(filtros: FiltrarAvisosInput ) {
-    return AvisoRepository.listar({busca:filtros.busca});
+  static listarAvisos(filtros: FiltrarAvisosInput, solicitante: Solicitante) {
+  if (!solicitante) {
+    throw new AppError("Não autorizado.", 401);
   }
+  return AvisoRepository.listar({ busca: filtros.busca });
+}
 
   static async buscarPorId(id: number) {
     const aviso = await AvisoRepository.buscarPorId(id); // só busca
