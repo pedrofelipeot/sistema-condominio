@@ -8,6 +8,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
   try {
+    await obterSessao();
     const { id } = idParamSchema.parse(await params);
     const aviso = await AvisoService.buscarPorId(id);
     return NextResponse.json(aviso);

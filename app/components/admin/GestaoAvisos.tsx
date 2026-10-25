@@ -8,6 +8,7 @@ import {
   acaoPerigosa,
   acaoPrimaria,
   acaoSecundaria,
+  acaoSobreCabecalho,
 } from "@/app/components/estilosAcoes";
 import ModalConfirmacao from "@/app/components/ModalConfirmacao";
 import {
@@ -233,7 +234,7 @@ export default function GestaoAvisos() {
           <button
             type="button"
             onClick={abrirNovoAviso}
-            className={acaoPrimaria}
+            className={acaoSobreCabecalho}
           >
             <span aria-hidden="true" className="text-lg leading-none">
               +
@@ -315,7 +316,6 @@ export default function GestaoAvisos() {
                 <tbody className="divide-y divide-slate-200">
                   {avisosFiltrados.map((aviso) => {
                     const publicadoEm = new Date(aviso.createdAt);
-                    const conteudoAberto = conteudosAbertos.has(aviso.id);
 
                     return (
                       <tr
@@ -323,30 +323,12 @@ export default function GestaoAvisos() {
                         className="align-top transition-colors hover:bg-slate-50"
                       >
                         <td className="max-w-2xl px-4 py-3 text-slate-800">
-                          <p className="font-semibold text-slate-900">
+                          <p className="break-words font-semibold text-slate-900">
                             {aviso.titulo}
                           </p>
-                          <p
-                            className={`mt-1 text-base leading-6 text-slate-600 ${
-                              conteudoAberto
-                                ? "whitespace-pre-line"
-                                : "line-clamp-2"
-                            }`}
-                          >
+                          <p className="mt-1 break-words whitespace-pre-line text-base leading-6 text-slate-600">
                             {aviso.texto}
                           </p>
-                          {aviso.texto.length > 120 && (
-                            <button
-                              type="button"
-                              aria-expanded={conteudoAberto}
-                              onClick={() => alternarConteudo(aviso.id)}
-                              className={`${acaoSecundaria} mt-2`}
-                            >
-                              {conteudoAberto
-                                ? "Recolher conteúdo"
-                                : "Ver conteúdo"}
-                            </button>
-                          )}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-slate-800">
                           <time dateTime={publicadoEm.toISOString()}>

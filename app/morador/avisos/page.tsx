@@ -45,7 +45,7 @@ export default function AvisosPage() {
 
   const [avisoMaisRecente, ...avisosAnteriores] = avisos;
 
-  return (
+    return (
     <div className="mx-auto w-full max-w-4xl space-y-6 px-5 py-8 sm:px-8 sm:py-10">
       <Link
         href="/morador"
@@ -105,10 +105,10 @@ export default function AvisosPage() {
                     {formatarData(avisoMaisRecente.createdAt)}
                   </time>
                 </div>
-                <h2 className="mt-4 text-xl font-semibold tracking-tight text-[var(--morador-text-primary)]">
+                <h2 className="mt-4 break-words text-xl font-semibold tracking-tight text-[var(--morador-text-primary)]">
                   {avisoMaisRecente.titulo}
                 </h2>
-                <p className="mt-2 whitespace-pre-line text-base leading-6 text-[var(--morador-text-secondary)]">
+                <p className="mt-2 break-words whitespace-pre-line text-base leading-6 text-[var(--morador-text-secondary)]">
                   {avisoMaisRecente.texto}
                 </p>
               </article>
@@ -121,10 +121,10 @@ export default function AvisosPage() {
                 </h2>
                 <ul className="divide-y divide-[var(--morador-border)] rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm">
                   {avisosAnteriores.map((aviso) => (
-                    <li key={aviso.id} className="py-4 first:pt-4 last:pb-4">
+                    <li key={aviso.id} className="break-words py-4 first:pt-4 last:pb-4">
                       <article>
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <h3 className="font-semibold tracking-tight text-[var(--morador-text-primary)]">
+                          <h3 className="min-w-0 break-words font-semibold tracking-tight text-[var(--morador-text-primary)]">
                             {aviso.titulo}
                           </h3>
                           <time
@@ -134,7 +134,7 @@ export default function AvisosPage() {
                             {formatarData(aviso.createdAt)}
                           </time>
                         </div>
-                        <p className="mt-1 whitespace-pre-line text-base leading-6 text-[var(--morador-text-secondary)]">
+                        <p className="mt-1 break-words whitespace-pre-line text-base leading-6 text-[var(--morador-text-secondary)]">
                           {aviso.texto}
                         </p>
                       </article>
