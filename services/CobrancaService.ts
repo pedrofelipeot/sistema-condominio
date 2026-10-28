@@ -24,8 +24,11 @@ export class CobrancaService {
   // Morador: só as cobranças que venceram durante os períodos em que ele morou
   static async listarDoMorador(solicitante: Solicitante) {
     const usuario = await UsuarioRepository.buscarPorId(solicitante.id);
-    if (!usuario || usuario.perfil !== "MORADOR" || !usuario.ativo) {
+    if (!usuario || !usuario.ativo) {
       return [];
+    }
+    if (usuario.perfil !== "MORADOR") {
+      throw new AppError("Apenas moradores podem consultar suas cobranças.", 403);
     }
 
     const ocupacoes = await OcupacaoRepository.listarPorMorador(solicitante.id);
@@ -69,8 +72,12 @@ export class CobrancaService {
     // 3. Transação: ou gera para todas as casas, ou para nenhuma
     return prisma.$transaction(async (tx) => {
       const cobrancas = [];
+      const casasOcupadas = new Set(
+        (await OcupacaoRepository.listarAtuais(tx)).map(({ casaId }) => casaId),
+      );
 
       for (const casa of casas) {
+        if (!casasOcupadas.has(casa.id)) continue;
         const ultimoDiaDoMes = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
         const vencimento = new Date(
           Date.UTC(ano, mes - 1, Math.min(casa.diaVencimento, ultimoDiaDoMes)),

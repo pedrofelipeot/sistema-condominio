@@ -116,6 +116,10 @@ static async minhaOcupacao(solicitante: Solicitante) {
       await OcupacaoService.exigirCasa(casaId, tx);
 
       // Regras de negócio -> 409
+      const ocupacaoAtiva = await OcupacaoRepository.buscarOcupacaoAtiva(usuarioId, tx);
+      if (ocupacaoAtiva) {
+        throw new AppError("O morador ja possui uma ocupacao ativa.", 409);
+      }
       const moradorSobreposto =
         await OcupacaoRepository.buscarPeriodoSobreposto(usuarioId, entrada, tx);
       if (moradorSobreposto) {

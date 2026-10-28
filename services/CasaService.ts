@@ -31,7 +31,8 @@ export class CasaService {
     }));
   }
 
-  static async buscarPorId(id: number) {
+  static async buscarPorId(id: number, solicitante: Solicitante) {
+    exigirAdmin(solicitante);
     const casa = await CasaRepository.buscarPorId(id);
     if (!casa) throw new AppError("Casa não encontrada.", 404);
 
@@ -47,7 +48,7 @@ export class CasaService {
     exigirAdmin(solicitante);
 
     // 2. Existência -> 404
-    await CasaService.buscarPorId(id);
+    await CasaService.buscarPorId(id, solicitante);
 
     // 3. Regra: o número é único e não pode ser de outra casa -> 409
     if (casa.numero !== undefined) {

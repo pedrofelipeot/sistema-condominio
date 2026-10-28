@@ -8,9 +8,9 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
   try {
-    await obterSessao();
+    const solicitante = await obterSessao();
     const { id } = idParamSchema.parse(await params);
-    const casa = await CasaService.buscarPorId(id);
+    const casa = await CasaService.buscarPorId(id, solicitante);
     return NextResponse.json(casa);
   } catch (error) {
     return tratarErro(error);
