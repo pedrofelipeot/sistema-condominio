@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { prisma } from "../../lib/prisma";
 
 export async function resetDb() {
   if (process.env.ALLOW_DB_RESET !== "true") {

@@ -1,5 +1,5 @@
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
+import { Prisma } from "../../generated/prisma/client";
+import { prisma } from "../../lib/prisma";
 let seq = 0;
 export function criarCasa(overrides: Partial<Prisma.CasaUncheckedCreateInput> = {}) {
   return prisma.casa.create({ data: { numero: 1, quartos: 2, valorAluguel: new Prisma.Decimal("1200.00"), diaVencimento: 10, ...overrides } });
