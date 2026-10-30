@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Suspense, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -209,7 +209,7 @@ function DetalhesCasa({ id }: { id: string }) {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <PageHeader
         eyebrow="Detalhes da unidade"
         title={`Casa ${casa.numero}`}
@@ -238,7 +238,7 @@ function DetalhesCasa({ id }: { id: string }) {
 
       <section
         aria-labelledby="informacoes-unidade-titulo"
-        className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6"
       >
         <h2
           id="informacoes-unidade-titulo"
@@ -287,7 +287,7 @@ function DetalhesCasa({ id }: { id: string }) {
       </section>
 
       <section aria-labelledby="moradores-titulo">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div className="mb-4 flex flex-col items-stretch gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2
               id="moradores-titulo"
@@ -301,7 +301,7 @@ function DetalhesCasa({ id }: { id: string }) {
           </div>
           <Link
             href={`/admin/casas/${id}/cadastro-morador`}
-            className={acaoPrimaria}
+            className={`${acaoPrimaria} w-full sm:w-auto`}
           >
             Cadastrar morador
           </Link>
@@ -317,7 +317,7 @@ function DetalhesCasa({ id }: { id: string }) {
         )}
 
         {moradores.length === 0 ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
+          <div className="rounded-lg border border-slate-200 bg-white p-4 text-center shadow-sm md:p-6">
             <h3 className="text-base font-semibold text-slate-900">
               Nenhum morador cadastrado
             </h3>
@@ -330,7 +330,7 @@ function DetalhesCasa({ id }: { id: string }) {
             {moradores.map((morador) => (
               <li
                 key={morador.id}
-                className="flex flex-col gap-4 py-4 lg:flex-row lg:items-center lg:justify-between"
+                className="flex flex-col gap-3 py-3 md:gap-4 md:py-4 lg:flex-row lg:items-center lg:justify-between"
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -345,7 +345,7 @@ function DetalhesCasa({ id }: { id: string }) {
                     {morador.email}
                   </p>
                 </div>
-                <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:min-w-[18rem]">
+                <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm md:grid-cols-2 md:min-w-[18rem]">
                   <div>
                     <dt className="text-slate-500">Data de entrada</dt>
                     <dd className="mt-0.5 font-medium text-slate-800">
@@ -394,7 +394,7 @@ function DetalhesCasa({ id }: { id: string }) {
             </p>
           </div>
           {cobrancas.length > 0 && (
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="grid gap-3 md:flex md:flex-wrap md:items-end">
               <label className={`${rotuloCampo} min-w-36`}>
                 Ano
                 <select
@@ -434,7 +434,73 @@ function DetalhesCasa({ id }: { id: string }) {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="overflow-x-auto">
+          <ul className="divide-y divide-slate-200 md:hidden">
+            {cobrancasVisiveis.map((cobranca) => {
+              const status = statusDaCobranca(cobranca);
+              const tom: "success" | "danger" | "warning" =
+                status === "Paga"
+                  ? "success"
+                  : status === "Em atraso"
+                    ? "danger"
+                    : "warning";
+              const competencia = new Date(
+                `${cobranca.competencia}-01T00:00:00.000Z`,
+              ).toLocaleDateString("pt-BR", {
+                month: "long",
+                year: "numeric",
+                timeZone: "UTC",
+              });
+
+              return (
+                <li key={cobranca.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold capitalize text-slate-900">
+                        {competencia}
+                      </p>
+                      <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+                        {formatarMoeda(cobranca.valor)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-600">
+                        Vencimento: {formatarData(cobranca.vencimento)}
+                      </p>
+                    </div>
+                    <StatusBadge tone={tom}>{status}</StatusBadge>
+                  </div>
+                  {cobranca.status !== "PAGA" && (
+                    <button
+                      type="button"
+                      onClick={() => setCobrancaParaPagar(cobranca)}
+                      className={`${acaoSecundaria} mt-3 w-full`}
+                    >
+                      Registrar pagamento
+                    </button>
+                  )}
+                </li>
+              );
+            })}
+            {cobrancasVisiveis.length === 0 && (
+              <li className="px-4 py-8 text-center text-sm text-slate-600">
+                {cobrancas.length === 0
+                  ? "Nenhuma cobrança cadastrada para esta casa."
+                  : "Nenhuma cobrança encontrada com os filtros selecionados."}
+                {cobrancas.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAnoFiltro("todos");
+                      setStatusFiltro("Todas");
+                      setPaginaCobrancas(1);
+                    }}
+                    className={`${acaoSecundaria} mt-3`}
+                  >
+                    Limpar filtros
+                  </button>
+                )}
+              </li>
+            )}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[920px] text-left text-base">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <tr>
@@ -562,7 +628,7 @@ function DetalhesCasa({ id }: { id: string }) {
           {cobrancasFiltradas.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 px-5 py-4">
               <p aria-live="polite" className="text-base text-slate-600">
-                Exibindo {primeiraCobrancaVisivel}–{ultimaCobrancaVisivel} de{" "}
+                Exibindo {primeiraCobrancaVisivel}—“{ultimaCobrancaVisivel} de{" "}
                 {cobrancasFiltradas.length}{" "}
                 {cobrancasFiltradas.length === 1 ? "cobrança" : "cobranças"}
               </p>

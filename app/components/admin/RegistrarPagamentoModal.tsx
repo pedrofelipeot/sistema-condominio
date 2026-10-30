@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { api, ErroApi } from "@/lib/api-cliente";
@@ -74,7 +74,7 @@ export default function RegistrarPagamentoModal({
       <section
         aria-labelledby="registrar-pagamento-titulo"
         aria-modal="true"
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6"
         role="dialog"
       >
         <div className="flex items-start justify-between gap-4">
@@ -97,7 +97,7 @@ export default function RegistrarPagamentoModal({
             disabled={salvando}
             className={acaoSecundaria}
           >
-            ×
+            &times;
           </button>
         </div>
 
@@ -130,7 +130,7 @@ export default function RegistrarPagamentoModal({
             >
               Data do pagamento
             </label>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row">
               <input
                 autoFocus
                 id="data-pagamento"
@@ -148,7 +148,7 @@ export default function RegistrarPagamentoModal({
               <button
                 type="button"
                 onClick={preencherDataDeHoje}
-                className={acaoSecundaria}
+                className={`${acaoSecundaria} w-full sm:w-auto`}
               >
                 Data de Hoje
               </button>
@@ -164,19 +164,19 @@ export default function RegistrarPagamentoModal({
             )}
           </div>
 
-          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
+          <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
             <button
               type="button"
               onClick={onClose}
               disabled={salvando}
-              className={acaoSecundaria}
+              className={`${acaoSecundaria} w-full sm:w-auto`}
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={salvando || !dataPagamento}
-              className={acaoPrimaria}
+              className={`${acaoPrimaria} w-full sm:w-auto`}
             >
               {salvando ? "Registrando..." : "Confirmar pagamento"}
             </button>

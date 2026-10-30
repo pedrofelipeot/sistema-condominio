@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -46,12 +46,12 @@ export default function AvisosPage() {
   const [avisoMaisRecente, ...avisosAnteriores] = avisos;
 
     return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 px-5 py-8 sm:px-8 sm:py-10">
+    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-5 md:px-8 md:py-10">
       <Link
         href="/morador"
         className={acaoSecundaria}
       >
-        <span aria-hidden="true">←</span>
+        <span aria-hidden="true">â†</span>
         Voltar ao início
       </Link>
       <PageHeader
@@ -82,7 +82,7 @@ export default function AvisosPage() {
       ) : (
       <section aria-label="Comunicados do condomínio">
         {avisos.length === 0 ? (
-          <div className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 text-center shadow-sm">
+          <div className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 text-center shadow-sm md:p-6">
             <h2 className="text-base font-semibold text-[var(--morador-text-primary)]">
               Nenhum aviso publicado
             </h2>
@@ -93,7 +93,7 @@ export default function AvisosPage() {
         ) : (
           <div className="space-y-6">
             {avisoMaisRecente && (
-              <article className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm">
+              <article className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <StatusBadge tone="neutral">
                     Mais recente
@@ -119,7 +119,7 @@ export default function AvisosPage() {
                 <h2 className="mb-2 text-sm font-semibold text-[var(--morador-text-primary)]">
                   Comunicados anteriores
                 </h2>
-                <ul className="divide-y divide-[var(--morador-border)] rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm">
+                <ul className="divide-y divide-[var(--morador-border)] rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6">
                   {avisosAnteriores.map((aviso) => (
                     <li key={aviso.id} className="break-words py-4 first:pt-4 last:pb-4">
                       <article>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
@@ -85,7 +85,7 @@ function PixCobranca({ pix, cobranca }: PixCobrancaProps) {
   }
 
   return (
-    <div className="mt-4 flex flex-col items-center gap-3 rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm">
+    <div className="mt-4 flex flex-col items-center gap-3 rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6">
       {qrCode ? (
         <Image
           src={qrCode}
@@ -192,7 +192,7 @@ export default function PagamentosMorador({
 
       <section
         aria-label="Resumo da situação financeira"
-        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm"
+        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6"
       >
         <div className="grid divide-y divide-[var(--morador-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="flex items-center justify-between gap-4 py-4 sm:pr-6">
@@ -240,7 +240,7 @@ export default function PagamentosMorador({
 
       <section
         aria-labelledby="pagamento-pix-titulo"
-        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm"
+        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6"
       >
           <h2 id="pagamento-pix-titulo" className="font-semibold tracking-tight text-[var(--morador-text-primary)]">
             Pagamento via Pix
@@ -306,7 +306,7 @@ export default function PagamentosMorador({
         aria-labelledby="historico-pagamentos-titulo"
         className="overflow-hidden rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)]"
       >
-        <div className="flex flex-col gap-4 border-b border-[var(--morador-border)] px-5 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6">
+        <div className="flex flex-col gap-4 border-b border-[var(--morador-border)] px-4 py-4 sm:flex-row sm:items-end sm:justify-between md:px-6">
           <div>
             <h2
               id="historico-pagamentos-titulo"
@@ -345,7 +345,42 @@ export default function PagamentosMorador({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <ul className="divide-y divide-[var(--morador-border)] md:hidden">
+          {cobrancasDoAno.map((cobranca) => {
+            const status = statusDaCobranca(cobranca);
+            return (
+              <li key={cobranca.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold capitalize text-[var(--morador-text-primary)]">
+                      {formatarCompetencia(cobranca.competencia)}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--morador-text-primary)]">
+                      {formatarMoeda(cobranca.valor)}
+                    </p>
+                  </div>
+                  <StatusBadge tone={tomStatus(status)}>{status}</StatusBadge>
+                </div>
+                <p className="mt-1 text-xs text-[var(--morador-text-secondary)]">
+                  Vencimento: {formatarData(cobranca.vencimento)}
+                </p>
+                {(cobranca.pagoEm || cobranca.formaPagamento) && (
+                  <p className="mt-1 text-xs text-[var(--morador-text-secondary)]">
+                    Pagamento: {formatarData(cobranca.pagoEm)}{cobranca.formaPagamento ? ` · ${cobranca.formaPagamento}` : ""}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+          {(cobrancas.length === 0 || cobrancasDoAno.length === 0) && (
+            <li className="px-4 py-8 text-center text-sm text-[var(--morador-text-secondary)]">
+              {cobrancas.length === 0
+                ? "Ainda não há cobranças registradas para esta unidade."
+                : "Não há cobranças para o ano selecionado."}
+            </li>
+          )}
+        </ul>
+        <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[680px] text-left text-base">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <tr>

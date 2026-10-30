@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -53,7 +53,7 @@ export default function PagamentosPage() {
 
   if (carregando) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-10">
         <div
           role="status"
           className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] px-6 py-12 text-center text-sm text-[var(--morador-text-secondary)]"
@@ -66,7 +66,7 @@ export default function PagamentosPage() {
 
   if (erro || !morador || !casa || !pix) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-10">
         <div
           role="alert"
           className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-6 py-5 text-sm font-medium text-[var(--morador-danger)]"
@@ -78,12 +78,12 @@ export default function PagamentosPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+    <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-10">
       <Link
         href="/morador"
         className={`${acaoSecundaria} mb-5`}
       >
-        <span aria-hidden="true">←</span>
+        <span aria-hidden="true">â†</span>
         Voltar ao início
       </Link>
       <PagamentosMorador

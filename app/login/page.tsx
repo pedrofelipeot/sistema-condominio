@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import Image from "next/image";
 import Campo from "../components/Campo";
@@ -82,7 +82,7 @@ export default function LoginPage() {
 
   return (
     // h-dvh + overflow-hidden: a página nunca rola; se faltar altura, só o lado do formulário rola
-    <main className="flex h-dvh flex-col overflow-hidden md:grid md:grid-cols-2 md:grid-rows-1">
+    <main className="flex min-h-screen flex-col bg-slate-100 md:h-dvh md:overflow-hidden md:grid md:grid-cols-2 md:grid-rows-1">
       {/* Lado da foto (só aparece em telas médias para cima) */}
       <div className="relative hidden min-h-0 md:block">
         <Image
@@ -111,10 +111,18 @@ export default function LoginPage() {
       </div>
 
       {/* Lado do formulário */}
-      <section className="relative min-h-0 flex-1 overflow-hidden bg-slate-100">
+      <section className="relative min-h-screen flex-1 bg-slate-100 md:min-h-0 md:overflow-hidden">
         {/* Área que rola se a janela for muito baixa; m-auto centraliza sem cortar o topo */}
-        <div className="relative flex h-full overflow-y-auto overscroll-contain px-6 py-5 sm:px-10">
-          <div className="relative m-auto w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-8 sm:px-10 md:h-full md:min-h-0 md:flex-row md:overflow-y-auto md:overscroll-contain md:py-5">
+          <div className="mb-4 text-center md:hidden">
+            <p className="text-xs font-semibold uppercase tracking-widest text-link">
+              Gestão do condomínio
+            </p>
+            <p className="mt-1 text-xl font-semibold text-slate-900">
+              {NOME_SISTEMA}
+            </p>
+          </div>
+          <div className="relative m-auto w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
 
             <header>
               <p className="text-sm font-semibold uppercase tracking-widest text-link">

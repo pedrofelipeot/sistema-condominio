@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -113,7 +113,7 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
     return (
       <section
         role="status"
-        className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6"
       >
         <p className="text-sm font-semibold text-emerald-700">Cadastro concluído</p>
         <h2 className="mt-1 text-xl font-semibold tracking-tight text-slate-950">
@@ -174,7 +174,7 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6">
       <h2 className="text-lg font-semibold tracking-tight text-slate-950">Dados do morador</h2>
       <p className="mt-1 text-base text-slate-600">
         O morador receberá um link para definir a própria senha.
@@ -287,11 +287,11 @@ export default function CadastroMorador({ casaId: casaFixa }: { casaId?: number 
           </div>
         )}
 
-        <div className="flex justify-end border-t border-slate-100 pt-5">
+        <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
           <button
             type="submit"
             disabled={enviando}
-            className={acaoPrimaria}
+            className={`${acaoPrimaria} w-full sm:w-auto`}
           >
             {enviando ? "Cadastrando..." : "Cadastrar morador"}
           </button>

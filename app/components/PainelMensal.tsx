@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react";
 import { formatarData, formatarMoeda } from "@/lib/format";
@@ -78,7 +78,7 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
         {indicadores.map((indicador) => (
           <article
             key={indicador.rotulo}
-            className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -162,7 +162,41 @@ export default function PainelMensal({ casas, cobrancas }: Props) {
         </div>
 
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="overflow-x-auto">
+          <ul className="divide-y divide-slate-200 md:hidden">
+            {linhasFiltradas.map((linha) => (
+              <li key={linha.casa.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">
+                      Casa {linha.casa.numero}
+                    </p>
+                    <p className="mt-1 text-sm capitalize text-slate-600">
+                      {linha.cobranca
+                        ? new Date(`${linha.cobranca.competencia}-01T00:00:00.000Z`).toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })
+                        : "Sem cobrança no mês selecionado"}
+                    </p>
+                  </div>
+                  <StatusBadge tone={tomStatus(linha.status)}>
+                    {linha.status}
+                  </StatusBadge>
+                </div>
+                <p className="mt-1 text-lg font-semibold tabular-nums text-slate-900">
+                  {linha.cobranca ? formatarMoeda(linha.cobranca.valor) : "—"}
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  Vencimento: {linha.cobranca ? formatarData(linha.cobranca.vencimento) : "—"}
+                </p>
+              </li>
+            ))}
+            {linhasFiltradas.length === 0 && (
+              <li className="px-4 py-8 text-center text-sm text-slate-600">
+                {casas.length === 0
+                  ? "Nenhuma unidade cadastrada."
+                  : "Nenhuma unidade encontrada com este status."}
+              </li>
+            )}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[760px] text-left text-base">
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                 <tr>

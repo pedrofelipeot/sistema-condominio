@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { formatarMoeda } from "@/lib/format";
@@ -14,6 +14,7 @@ import { campoFormulario, rotuloCampo } from "@/app/components/estilosFormulario
 export default function CasasPage() {
   const [casas, setCasas] = useState<Casa[]>([]);
   const [casasAtivasIds, setCasasAtivasIds] = useState<number[]>([]);
+  const [nomesMoradoresPorCasa, setNomesMoradoresPorCasa] = useState<Record<number, string>>({});
   const [busca, setBusca] = useState("");
   const [filtroOcupacao, setFiltroOcupacao] = useState<
     "todas" | "ocupadas" | "vazias"
@@ -32,6 +33,14 @@ export default function CasasPage() {
 
         const casasAtivas = dados.filter((casa) => casa.moradores.length > 0);
         setCasas(dados.map(converterCasa));
+        setNomesMoradoresPorCasa(
+          Object.fromEntries(
+            dados.map((casa) => [
+              casa.id,
+              casa.moradores.map((morador) => morador.nome).join(", "),
+            ]),
+          ),
+        );
         setCasasAtivasIds(casasAtivas.map((casa) => casa.id));
         setUnidadesAtivas(casasAtivas.length);
         setReceitaMensal(
@@ -66,7 +75,7 @@ export default function CasasPage() {
   });
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-5 md:space-y-7">
       <PageHeader
         eyebrow="Gestão do condomínio"
         title="Casas"
@@ -93,7 +102,7 @@ export default function CasasPage() {
             aria-label="Resumo das casas"
             className="grid gap-3 sm:grid-cols-3"
           >
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Unidades cadastradas
               </p>
@@ -102,7 +111,7 @@ export default function CasasPage() {
               </p>
               <p className="mt-1 text-base text-slate-600">casas no condomínio</p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Unidades ativas
               </p>
@@ -111,7 +120,7 @@ export default function CasasPage() {
               </p>
               <p className="mt-1 text-base text-slate-600">com morador ativo</p>
             </div>
-            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
                 Aluguel mensal previsto
               </p>
@@ -186,7 +195,43 @@ export default function CasasPage() {
                     </p>
                   </div>
                 )}
-                <div className="overflow-x-auto">
+                <ul className="divide-y divide-slate-200 md:hidden">
+                  {casasFiltradas.map((casa) => {
+                    const ocupada = casasAtivasIds.includes(casa.id);
+                    return (
+                      <li key={casa.id}>
+                        <Link
+                          href={`/admin/casas/${casa.id}`}
+                          aria-label={`Ver detalhes da Casa ${casa.numero}`}
+                          className="flex min-h-16 items-center justify-between gap-3 px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                        >
+                          <span className="min-w-0">
+                            <span className="block font-semibold text-slate-900">
+                              Casa {casa.numero}
+                            </span>
+                            <span className="block truncate text-sm text-slate-600">
+                              {nomesMoradoresPorCasa[casa.id] || "Sem morador ativo"}
+                            </span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <StatusBadge tone={ocupada ? "success" : "neutral"}>
+                              {ocupada ? "Ocupada" : "Vaga"}
+                            </StatusBadge>
+                            <svg aria-hidden="true" className="h-5 w-5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="m9 18 6-6-6-6" />
+                            </svg>
+                          </span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                  {casasFiltradas.length === 0 && (
+                    <li className="px-4 py-8 text-center text-sm text-slate-600">
+                      {casas.length === 0 ? "Nenhuma casa cadastrada." : "Nenhuma casa encontrada. Ajuste a pesquisa ou o filtro."}
+                    </li>
+                  )}
+                </ul>
+                <div className="hidden overflow-x-auto md:block">
                   <table className="w-full min-w-[680px] text-left text-base">
                     <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-600">
                       <tr>

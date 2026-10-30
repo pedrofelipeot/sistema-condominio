@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -62,7 +62,7 @@ export default function MoradorPage() {
 
   if (carregando) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-10">
         <div
           role="status"
           className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] px-6 py-12 text-center text-sm text-[var(--morador-text-secondary)]"
@@ -75,7 +75,7 @@ export default function MoradorPage() {
 
   if (erro || !morador || !casa) {
     return (
-      <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-8 md:py-10">
         <div
           role="alert"
           className="rounded-lg border border-[#FECACA] bg-[#FEF2F2] px-6 py-5 text-sm font-medium text-[var(--morador-danger)]"
@@ -99,7 +99,7 @@ export default function MoradorPage() {
     .slice(0, 2);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-7 px-5 py-8 sm:px-8 sm:py-10">
+    <div className="mx-auto w-full max-w-5xl space-y-7 px-4 py-5 md:px-8 md:py-10">
       <PageHeader
         eyebrow="Área do morador"
         title={`Olá, ${morador.nome}`}
@@ -110,7 +110,7 @@ export default function MoradorPage() {
       <section aria-label="Acessos principais" className="grid gap-4 md:grid-cols-2">
         <Link
           href="/morador/pagamentos"
-          className="group flex min-h-64 flex-col rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm transition-colors hover:border-link hover:bg-hover-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link focus-visible:ring-4 focus-visible:ring-primary/20"
+          className="group flex min-h-0 flex-col rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:min-h-64 md:p-6 transition-colors hover:border-link hover:bg-hover-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link focus-visible:ring-4 focus-visible:ring-primary/20"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -184,7 +184,7 @@ export default function MoradorPage() {
 
         <Link
           href="/morador/avisos"
-          className="group flex min-h-64 flex-col rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm transition-colors hover:border-link hover:bg-hover-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link focus-visible:ring-4 focus-visible:ring-primary/20"
+          className="group flex min-h-0 flex-col rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:min-h-64 md:p-6 transition-colors hover:border-link hover:bg-hover-light focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-link focus-visible:ring-4 focus-visible:ring-primary/20"
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -246,7 +246,7 @@ export default function MoradorPage() {
 
       <section
         aria-label="Informações da unidade"
-        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-6 shadow-sm"
+        className="rounded-lg border border-[var(--morador-border)] bg-[var(--morador-surface)] p-4 shadow-sm md:p-6"
       >
         <dl className="grid divide-y divide-[var(--morador-border)] sm:grid-cols-2 sm:divide-x sm:divide-y-0">
           <div className="py-4 sm:pr-6">

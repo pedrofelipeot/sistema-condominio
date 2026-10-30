@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import PainelMensal from "../components/PainelMensal";
@@ -90,7 +90,7 @@ export default function AdminPage() {
         action={
           <section
             aria-labelledby="periodo-titulo"
-            className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm md:p-6"
           >
             <h2 id="periodo-titulo" className="text-sm font-semibold text-slate-800">
               Período

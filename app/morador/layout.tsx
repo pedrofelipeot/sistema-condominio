@@ -1,5 +1,10 @@
+﻿import type { Metadata } from "next";
 import type { CSSProperties, ReactNode } from "react";
 import NavegacaoArea from "@/app/components/NavegacaoArea";
+
+export const metadata: Metadata = {
+  title: "Início",
+};
 
 type MoradorTheme = CSSProperties & Record<`--morador-${string}`, string>;
 
