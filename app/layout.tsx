@@ -5,8 +5,20 @@ const nomeSistema = "Gerenciador Condomínio";
 const descricao = "Portal do condomínio para administração e moradores";
 const corTema = "#1e3a5f";
 
+function urlBase() {
+  const bruta = process.env.APP_URL?.trim();
+  if (bruta) {
+    try {
+      return new URL(bruta);
+    } catch {
+      // valor inválido: cai no endereço padrão abaixo
+    }
+  }
+  return new URL("http://localhost:3000");
+}
+
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+  metadataBase: urlBase(),
   title: {
     default: nomeSistema,
     template: `%s | ${nomeSistema}`,
