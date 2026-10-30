@@ -33,6 +33,7 @@ export default function NavegacaoArea({ area }: { area: Area }) {
 
     try {
       await api<void>("/api/auth/logout", { method: "POST" });
+      setEncerrando(false);
       router.replace("/login");
       router.refresh();
     } catch (error) {

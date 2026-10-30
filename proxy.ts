@@ -3,6 +3,10 @@ import { jwtVerify } from "jose";
 
 const segredo = new TextEncoder().encode(process.env.SESSION_SECRET ?? "");
 
+function destinoDoPerfil(perfil: string) {
+  return perfil === "ADMIN" ? "/admin" : "/morador";
+}
+
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get("sessao")?.value;
@@ -15,6 +19,14 @@ export async function proxy(req: NextRequest) {
     } catch {
       perfil = null; // token inválido ou expirado
     }
+  }
+
+  // Login: quem já está logado vai direto para a sua área
+  if (pathname === "/login") {
+    if (perfil) {
+      return NextResponse.redirect(new URL(destinoDoPerfil(perfil), req.url));
+    }
+    return NextResponse.next();
   }
 
   if (!perfil) {
@@ -34,7 +46,7 @@ export async function proxy(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Só as áreas restritas. /login, /definir-senha e /api ficam de fora.
+// Áreas restritas e a tela de login. /definir-senha e /api ficam de fora.
 export const config = {
-  matcher: ["/admin/:path*", "/morador/:path*"],
+  matcher: ["/login", "/admin/:path*", "/morador/:path*"],
 };
