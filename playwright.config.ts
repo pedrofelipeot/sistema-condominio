@@ -5,14 +5,33 @@ import { defineConfig } from "@playwright/test";
 const isCI = process.env.CI === "true";
 if (!isCI) loadEnv({ path: ".env.test", override: true });
 assertTestDatabaseIsIsolated();
-if (process.env.ALLOW_DB_RESET !== "true" || !process.env.DATABASE_URL) {
-  throw new Error("Playwright exige .env.test com ALLOW_DB_RESET=true e DATABASE_URL definido.");
+
+const databaseUrl = process.env.DATABASE_URL;
+if (process.env.ALLOW_DB_RESET !== "true" || !databaseUrl) {
+  throw new Error(
+    "Playwright exige .env.test com ALLOW_DB_RESET=true e DATABASE_URL definido.",
+  );
 }
-const databaseHost = new URL(process.env.DATABASE_URL).hostname.toLowerCase();
+
+const databaseHost = new URL(databaseUrl).hostname.toLowerCase();
 if (isCI ? databaseHost !== "localhost" : !databaseHost.endsWith(".neon.tech")) {
-  throw new Error(isCI ? "No CI, Playwright só pode usar o PostgreSQL local do service container." : "Playwright só pode executar contra o banco Neon definido em .env.test.");
+  throw new Error(
+    isCI
+      ? "No CI, Playwright só pode usar o PostgreSQL local do service container."
+      : "Playwright só pode executar contra o banco Neon definido em .env.test.",
+  );
 }
+
 const baseURL = "http://localhost:3100";
+
+// O Playwright exige que todos os valores do env sejam texto.
+// process.env pode ter valores undefined, então filtramos antes de repassar.
+const envBase: Record<string, string> = Object.fromEntries(
+  Object.entries(process.env).filter(
+    (entry): entry is [string, string] => typeof entry[1] === "string",
+  ),
+);
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
@@ -21,14 +40,16 @@ export default defineConfig({
   expect: { timeout: 30000 },
   use: { baseURL, browserName: "chromium", trace: "on-first-retry" },
   webServer: {
-    command: isCI ? "npm start -- -p 3100" : "dotenv -e .env.test -- next dev -p 3100",
+    command: isCI
+      ? "npm start -- -p 3100"
+      : "dotenv -e .env.test -- next dev -p 3100",
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,
     env: {
-      ...process.env,
-      DATABASE_URL: process.env.DATABASE_URL,
-      DIRECT_URL: process.env.DIRECT_URL,
+      ...envBase,
+      DATABASE_URL: databaseUrl,
+      DIRECT_URL: process.env.DIRECT_URL ?? databaseUrl,
       ALLOW_DB_RESET: "true",
       SESSION_SECRET: process.env.SESSION_SECRET ?? "fake-e2e-session-secret-only",
       CRON_SECRET: process.env.CRON_SECRET ?? "fake-e2e-cron-secret-only",
