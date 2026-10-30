@@ -119,6 +119,7 @@ export default function FormularioDefinirSenha() {
                 <Campo
                   label="Nova senha"
                   id="nova-senha"
+                  variant="login"
                   type="password"
                   value={novaSenha}
                   onChange={setNovaSenha}
@@ -128,6 +129,7 @@ export default function FormularioDefinirSenha() {
                 <Campo
                   label="Confirme a nova senha"
                   id="confirmar-senha"
+                  variant="login"
                   type="password"
                   value={confirmarSenha}
                   onChange={setConfirmarSenha}
