@@ -1,12 +1,15 @@
 import { readFileSync, existsSync } from "node:fs";
-import { parse } from "dotenv";
+import { parseEnv } from "node:util";
 
 export function assertTestDatabaseIsIsolated(): void {
   if (process.env.CI === "true") return;
-  if (!existsSync(".env.test") || !existsSync(".env")) return;
+  if (!existsSync(".env.test")) {
+    throw new Error("Tests require .env.test to verify the test database host.");
+  }
+  if (!existsSync(".env")) return;
 
-  const testDatabaseUrl = parse(readFileSync(".env.test")).DATABASE_URL;
-  const localDatabaseUrl = parse(readFileSync(".env")).DATABASE_URL;
+  const testDatabaseUrl = parseEnv(readFileSync(".env.test", "utf8")).DATABASE_URL;
+  const localDatabaseUrl = parseEnv(readFileSync(".env", "utf8")).DATABASE_URL;
   if (!testDatabaseUrl || !localDatabaseUrl) return;
 
   let testHost: string;

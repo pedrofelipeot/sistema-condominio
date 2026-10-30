@@ -31,6 +31,7 @@ test.beforeEach(async ({}, testInfo) => {
   const cenarios: Record<string, string> = {
     "login direciona o administrador para /admin": "login-admin",
     "login direciona o morador para /morador": "login-morador",
+    "usuário logado que abre /login é redirecionado para a sua área": "login-morador",
     "login com senha errada mostra uma mensagem de erro": "senha-errada",
     "morador que abre /admin é redirecionado para /morador": "morador-admin",
     "convite cadastra morador, define senha e permite entrar": "convite",
@@ -52,6 +53,12 @@ test("login direciona o morador para /morador", async ({ page }) => {
   await entrarPelaTela(page, String(dados.moradorEmail));
   await expect(page).toHaveURL(/\/morador$/);
   await expect(page.getByRole("heading", { name: "Olá, Morador teste" })).toBeVisible();
+});
+
+test("usuário logado que abre /login é redirecionado para a sua área", async ({ page }) => {
+  await entrarPelaApi(page, String(dados.moradorEmail));
+  await page.goto("/login");
+  await expect(page).toHaveURL(/\/morador$/);
 });
 
 test("login com senha errada mostra uma mensagem de erro", async ({ page }) => {
@@ -78,6 +85,8 @@ test("convite cadastra morador, define senha e permite entrar", async ({ page })
 
   const link = await page.getByLabel("Link de convite").inputValue();
   const convite = new URL(link);
+  // O morador é outra pessoa e começa sem a sessão do admin.
+  await page.context().clearCookies();
   await page.goto(`${convite.pathname}${convite.search}`);
   await page.getByRole("textbox", { name: "Nova senha", exact: true }).fill(SENHA);
   await page.getByRole("textbox", { name: "Confirme a nova senha" }).fill(SENHA);

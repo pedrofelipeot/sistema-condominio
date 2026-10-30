@@ -65,6 +65,35 @@ describe("protecao das paginas pelo proxy", () => {
     expect(destino(response!)).toBe("http://localhost/login");
   });
 
+  it.each([undefined, "nao.e.um.jwt"]) ("/login abre normalmente sem cookie ou com token inválido", async (token) => {
+    const response = await authProxy(request("/login", token));
+    expect(response?.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("/login abre normalmente com payload adulterado", async () => {
+    const morador = await criarMorador();
+    const response = await authProxy(request("/login", adulterarToken(await criarSessaoTeste(morador))));
+    expect(response?.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("/login abre normalmente com token expirado", async () => {
+    const morador = await criarMorador();
+    const response = await authProxy(request("/login", await criarTokenExpirado(morador)));
+    expect(response?.headers.get("x-middleware-next")).toBe("1");
+  });
+
+  it("admin com sessão válida em /login é redirecionado para /admin", async () => {
+    const admin = await criarAdmin();
+    const response = await authProxy(request("/login", await criarSessaoTeste(admin)));
+    expect(destino(response!)).toBe("http://localhost/admin");
+  });
+
+  it("morador com sessão válida em /login é redirecionado para /morador", async () => {
+    const morador = await criarMorador();
+    const response = await authProxy(request("/login", await criarSessaoTeste(morador)));
+    expect(destino(response!)).toBe("http://localhost/morador");
+  });
+
   it("morador em /admin e redirecionado para a area do morador", async () => {
     const morador = await criarMorador();
     const response = await authProxy(request("/admin", await criarSessaoTeste(morador)));

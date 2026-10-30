@@ -1,9 +1,10 @@
-import { config as loadEnv } from "dotenv";
+import { readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import { assertTestDatabaseIsIsolated } from "./tests/helpers/guard-test-database";
 import { defineConfig } from "@playwright/test";
 
 const isCI = process.env.CI === "true";
-if (!isCI) loadEnv({ path: ".env.test", override: true });
+if (!isCI) Object.assign(process.env, parseEnv(readFileSync(".env.test", "utf8")));
 assertTestDatabaseIsIsolated();
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -42,7 +43,7 @@ export default defineConfig({
   webServer: {
     command: isCI
       ? "npm start -- -p 3100"
-      : "dotenv -e .env.test -- next dev -p 3100",
+      : "npx next dev -p 3100",
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

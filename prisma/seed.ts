@@ -1,4 +1,5 @@
-import "dotenv/config";
+import { existsSync, readFileSync } from "node:fs";
+import { parseEnv } from "node:util";
 import bcrypt from "bcryptjs";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../generated/prisma/client";
@@ -14,6 +15,12 @@ import {
   gerarCobrancas,
   inicioDeHoje,
 } from "./seed-dados";
+
+if (existsSync(".env")) {
+  for (const [key, value] of Object.entries(parseEnv(readFileSync(".env", "utf8")))) {
+    process.env[key] ??= value;
+  }
+}
 
 if (process.env.NODE_ENV === "production") {
   throw new Error("Este seed cria dados de teste: não rode em produção.");

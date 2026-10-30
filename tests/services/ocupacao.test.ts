@@ -13,7 +13,7 @@ describe("OcupacaoService", () => {
     const o = await OcupacaoService.admitirMorador(morador.id, casa.id, new Date("2026-03-10"));
     expect(o.dataSaida).toBeNull();
   });
-  it("encerra ocupa��o e atualiza o status do morador", async () => {
+  it("encerra ocupação e atualiza o status do morador", async () => {
     const casa = await criarCasa(); const morador = await criarMorador(); const admin = await criarAdmin();
     await criarOcupacao(morador.id, casa.id);
     const fim = await OcupacaoService.encerrarMoradia(morador.id, new Date("2026-03-20"), { id: admin.id, perfil: "ADMIN" });
