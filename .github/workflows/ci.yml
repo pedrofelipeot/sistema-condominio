@@ -1,0 +1,107 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: fake_ci_password
+          POSTGRES_DB: condominio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d condominio_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://postgres:fake_ci_password@localhost:5432/condominio_test?sslmode=disable
+      DIRECT_URL: postgresql://postgres:fake_ci_password@localhost:5432/condominio_test?sslmode=disable
+      ALLOW_DB_RESET: "true"
+      SESSION_SECRET: fake_ci_session_secret_not_for_real_use
+      CRON_SECRET: fake_ci_cron_secret_not_for_real_use
+      APP_URL: http://localhost:3100
+      PIX_CHAVE: pix-ci@example.test
+      PIX_NOME_RECEBEDOR: Condominio CI
+      PIX_CIDADE: Sao Paulo
+      SEED_RESET: "false"
+      ADMIN_EMAIL: admin-ci@example.test
+      ADMIN_PASSWORD: FakeAdminPassword123!
+      SEED_MORADOR_PASSWORD: FakeResidentPassword123!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate --config prisma.config.ts
+      - run: npx prisma db push --config prisma.config.ts
+      - run: npm test -- --maxWorkers=1
+      - run: npm run lint
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: fake_ci_password
+          POSTGRES_DB: condominio_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d condominio_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      CI: "true"
+      NEXT_TELEMETRY_DISABLED: "1"
+      DATABASE_URL: postgresql://postgres:fake_ci_password@localhost:5432/condominio_test?sslmode=disable
+      DIRECT_URL: postgresql://postgres:fake_ci_password@localhost:5432/condominio_test?sslmode=disable
+      ALLOW_DB_RESET: "true"
+      SESSION_SECRET: fake_ci_session_secret_not_for_real_use
+      CRON_SECRET: fake_ci_cron_secret_not_for_real_use
+      APP_URL: http://localhost:3100
+      PIX_CHAVE: pix-ci@example.test
+      PIX_NOME_RECEBEDOR: Condominio CI
+      PIX_CIDADE: Sao Paulo
+      SEED_RESET: "false"
+      ADMIN_EMAIL: admin-ci@example.test
+      ADMIN_PASSWORD: FakeAdminPassword123!
+      SEED_MORADOR_PASSWORD: FakeResidentPassword123!
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate --config prisma.config.ts
+      - run: npx prisma db push --config prisma.config.ts
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+
