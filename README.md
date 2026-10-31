@@ -1,6 +1,6 @@
 # Sistema Condomínio
 
-![CI](https://github.com/SEU-USUARIO/sistema-condominio/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/pedrofelipeot/sistema-condominio/actions/workflows/ci.yml/badge.svg)](https://github.com/pedrofelipeot/sistema-condominio/actions/workflows/ci.yml)
 
 Sistema web para a gestão de um condomínio pequeno de bairro, com 20 casas, sem porteiro e sem taxa de condomínio, onde o que se cobra é o **aluguel de cada casa**. Antes dele, as cobranças viviam num caderno e eram feitas pelo WhatsApp.
 
@@ -29,7 +29,7 @@ Um sistema de condomínio não é uma ideia nova. O que importa aqui são as dec
 **Pré-requisitos:** Node.js (versão LTS recente) e um PostgreSQL (local ou Neon).
 
 ```bash
-git clone https://github.com/SEU-USUARIO/sistema-condominio.git
+git clone https://github.com/pedrofelipeot/sistema-condominio
 cd sistema-condominio
 npm install
 
@@ -142,4 +142,4 @@ O modelo de dados (com diagrama), as regras de negócio e o fluxo do convite est
 
 ## Autor
 
-**Pedro** · [GitHub](https://github.com/SEU-USUARIO) · [LinkedIn](https://linkedin.com/in/SEU-PERFIL)
+**Pedro** · [GitHub](https://github.com/pedrofelipeot) · [LinkedIn](www.linkedin.com/in/pedrofelipeot)
